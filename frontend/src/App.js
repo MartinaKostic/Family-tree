@@ -1,10 +1,10 @@
-import FamilyTree from "./components/SignIn/SignUp/FamilyTree/FamilyTree";
-import './App.css';
+import FamilyTree from "./components/FamilyTree";
+import "./App.css";
 
 function App() {
   return (
     <div className="App">
-    <FamilyTree/>
+      <FamilyTree />
     </div>
   );
 }
