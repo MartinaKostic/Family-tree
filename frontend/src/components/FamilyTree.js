@@ -8,7 +8,8 @@ import { hierarchy, tree } from "d3-hierarchy";
 const FamilyTree = () => {
   const { loading, error, records } = useReadCypher(`
     MATCH (p:Person)-[:PARENT_OF]->(c:Person)
-    RETURN p.name AS parent, collect(c.name) AS children
+    OPTIONAL MATCH (p)-[:SPOUSE_OF]-(s:Person)    
+    RETURN p.name AS parent, collect(c.name) AS children, collect(s.name) AS spouses
   `);
   const svgRef = useRef();
 
@@ -17,29 +18,33 @@ const FamilyTree = () => {
   // Loop through each record
   records?.forEach((record) => {
     const parent = record.get("parent");
-    const children = record.get("children");
+    const children = record.get("children") || [];
+    const spouses = record.get("spouses").filter((spouse) => spouse !== parent);
 
-    // If the parent is not already in the map, add it
-    //empty array to later add children
+    // Initialize parent in map if not already present
     if (!parentChildrenMap[parent]) {
-      parentChildrenMap[parent] = [];
+      parentChildrenMap[parent] = { children: [], spouses: [] };
     }
-
-    // Filter out children already present in the map
-    const newChildren = children.filter(
-      (child) => !parentChildrenMap[parent].includes(child)
-    );
-
-    // Add the new children to the parent's children list
-    parentChildrenMap[parent].push(...newChildren);
+    // Add children and spouses, avoiding duplicates
+    children.forEach((child) => {
+      if (!parentChildrenMap[parent].children.includes(child)) {
+        parentChildrenMap[parent].children.push(child);
+      }
+    });
+    spouses.forEach((spouse) => {
+      if (!parentChildrenMap[parent].spouses.includes(spouse)) {
+        parentChildrenMap[parent].spouses.push(spouse);
+      }
+    });
   });
 
-  const data = Object.entries(parentChildrenMap).map(([parent, children]) => {
-    return {
+  const data = Object.entries(parentChildrenMap).map(
+    ([parent, { children, spouses }]) => ({
       name: parent,
-      children: children.map((child) => ({ name: child })),
-    };
-  });
+      children: children.map((name) => ({ name })),
+      spouses,
+    })
+  );
 
   useEffect(() => {
     if (!data || data.length === 0) return;
@@ -94,6 +99,30 @@ const FamilyTree = () => {
       .attr("x2", (d) => d.target.x)
       .attr("y2", (d) => d.target.y)
       .attr("stroke", "black");
+
+    // Draw lines between spouses
+    data.forEach((parentData) => {
+      const { name, children, spouses } = parentData;
+      spouses?.forEach((spouseName) => {
+        // Find positions of parent and spouse nodes
+        const parentPosition = treeData
+          .descendants()
+          .find((d) => d.data.name === name);
+        const spousePosition = treeData
+          .descendants()
+          .find((d) => d.data.name === spouseName);
+
+        // Draw line between parent and spouse
+        svg
+          .append("line")
+          .attr("class", "spouse-link")
+          .attr("x1", parentPosition.x)
+          .attr("y1", parentPosition.y)
+          .attr("x2", spousePosition.x)
+          .attr("y2", spousePosition.y)
+          .attr("stroke", "red");
+      });
+    });
   }, [data]);
 
   if (loading) return <div>Loading...</div>;
