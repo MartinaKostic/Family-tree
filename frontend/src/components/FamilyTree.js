@@ -3,7 +3,6 @@ import { useReadCypher } from "use-neo4j";
 import { select } from "d3-selection";
 import { hierarchy, tree } from "d3-hierarchy";
 import "./FamilyTree.css";
-import "./Form";
 
 const FamilyTree = () => {
   const { loading, error, records } = useReadCypher(`
