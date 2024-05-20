@@ -1,114 +1,167 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useReadCypher } from "use-neo4j";
 import { select } from "d3-selection";
 import { hierarchy, tree } from "d3-hierarchy";
 import "./FamilyTree.css";
+import "./Form";
 
 const FamilyTree = () => {
   const { loading, error, records } = useReadCypher(`
     MATCH (p:Person)-[:PARENT_OF]->(c:Person)
-    OPTIONAL MATCH (p)-[:SPOUSE_OF]-(s:Person)    
-    RETURN p.name AS parent, collect(c.name) AS children, collect(s.name) AS spouses
+    OPTIONAL MATCH (p)-[:SPOUSE_OF]-(s:Person)
+    RETURN p, collect(DISTINCT c) AS children, collect(DISTINCT s) AS spouses
   `);
   const svgRef = useRef();
 
-  const parentChildrenMap = {};
-  const spouseLinks = new Set(); // To ensure unique links
-
-  records?.forEach((record) => {
-    const parent = record.get("parent");
-    const children = record.get("children") || [];
-    const spouses = record.get("spouses").filter((spouse) => spouse !== parent);
-
-    if (!parentChildrenMap[parent]) {
-      parentChildrenMap[parent] = { children: [], spouses: [] };
-    }
-
-    children.forEach((child) => {
-      if (!parentChildrenMap[parent].children.includes(child)) {
-        parentChildrenMap[parent].children.push(child);
-      }
-    });
-
-    spouses.forEach((spouse) => {
-      if (!parentChildrenMap[parent].spouses.includes(spouse)) {
-        parentChildrenMap[parent].spouses.push(spouse);
-        const sortedPair = [parent, spouse].sort();
-        spouseLinks.add(sortedPair.join("-")); // Add unique pair
-      }
-    });
-  });
-
-  const data = Object.entries(parentChildrenMap).map(
-    ([parent, { children, spouses }]) => ({
-      name: parent,
-      children: children.map((name) => ({ name })),
-      spouses,
-    })
-  );
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    if (!data || data.length === 0) return;
+    if (records) {
+      const nodes = new Map();
+      const spouseLinks = [];
 
+      records.forEach((record) => {
+        const parent = record.get("p").properties;
+        const parentId = record.get("p").identity.low;
+        const children = record.get("children").map((child) => ({
+          ...child.properties,
+          id: child.identity.low,
+        }));
+        const spouses = record.get("spouses").map((spouse) => ({
+          ...spouse.properties,
+          id: spouse.identity.low,
+        }));
+
+        if (!nodes.has(parentId)) {
+          nodes.set(parentId, {
+            ...parent,
+            id: parentId,
+            children: [],
+            spouses: [],
+          });
+        }
+
+        children.forEach((child) => {
+          if (!nodes.has(child.id)) {
+            nodes.set(child.id, { ...child, children: [], spouses: [] });
+          }
+          nodes.get(parentId).children.push(nodes.get(child.id));
+        });
+
+        spouses.forEach((spouse) => {
+          if (!nodes.has(spouse.id)) {
+            nodes.set(spouse.id, { ...spouse, children: [], spouses: [] });
+          }
+          nodes.get(parentId).spouses.push(nodes.get(spouse.id));
+          spouseLinks.push({ source: parentId, target: spouse.id });
+        });
+      });
+
+      const rootId = 5; // Replace this with the actual root ID
+      const rootNode = nodes.get(rootId);
+
+      setData({
+        node: rootNode,
+        spouseLinks,
+        nodes: Array.from(nodes.values()),
+      });
+    }
+  }, [records]);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const { node, spouseLinks, nodes } = data;
     const svg = select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const g = svg.append("g").attr("transform", "translate(750,0)");
+    const width = 1000;
+    const height = 1000;
+    const g = svg.append("g").attr("transform", "translate(50,50)");
 
-    const root = hierarchy({ children: data }, (d) => d.children);
-    const treeLayout = tree()
-      .size([900, 900]) // Adjust the size as needed
-      .nodeSize([100, 200]); // Adjust spacing between the nodes
-    const treeData = treeLayout(root);
+    const root = hierarchy(node, (d) => d.children);
+    const treeLayout = tree().size([width - 100, height - 100]);
+    treeLayout(root);
 
-    g.selectAll(".node")
-      .data(treeData.descendants())
+    // Create a map of the positions to adjust spouses
+    const positions = new Map();
+    root.descendants().forEach((d) => {
+      positions.set(d.data.id, { x: d.x, y: d.y });
+    });
+
+    // Include spouses in positions map with initial placement to the left
+    spouseLinks.forEach((link) => {
+      if (!positions.has(link.target)) {
+        const sourcePos = positions.get(link.source);
+        positions.set(link.target, { x: sourcePos.x - 100, y: sourcePos.y });
+      }
+    });
+
+    // Draw spouse links
+    spouseLinks.forEach((link) => {
+      const sourcePos = positions.get(link.source);
+      const targetPos = positions.get(link.target);
+
+      if (sourcePos && targetPos) {
+        targetPos.y = sourcePos.y; // Align the spouse node horizontally with the source node
+
+        g.append("line")
+          .attr("x1", sourcePos.x)
+          .attr("y1", sourcePos.y)
+          .attr("x2", targetPos.x)
+          .attr("y2", targetPos.y)
+          .attr("stroke", "blue")
+          .attr("stroke-width", 2)
+          .attr("stroke-opacity", 0.5)
+          .attr("stroke-dasharray", "5,5");
+      }
+    });
+
+    // Draw parent-child links
+    g.selectAll(".link")
+      .data(root.links())
       .enter()
+      .append("path")
+      .attr("class", "link")
+      .attr("d", (d) => {
+        return `M${d.source.x},${d.source.y + 15}V${
+          d.source.y + (d.target.y - d.source.y) / 2
+        }H${d.target.x}V${d.target.y - 15}`;
+      })
+      .attr("fill", "none")
+      .attr("stroke", "#ccc")
+      .attr("stroke-width", 2);
+
+    // Draw nodes
+    const allNodes = root.descendants().concat(
+      spouseLinks.map((link) => ({
+        id: link.target,
+        x: positions.get(link.target).x,
+        y: positions.get(link.target).y,
+        data: nodes.find((n) => n.id === link.target),
+      }))
+    );
+
+    const nodeSelection = g
+      .selectAll(".node")
+      .data(allNodes)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .attr("transform", (d) => `translate(${d.x},${d.y})`);
+
+    nodeSelection
       .append("rect")
-      .attr("x", (d) => d.x - 50)
-      .attr("y", (d) => d.y - 15)
       .attr("width", 100)
       .attr("height", 30)
       .attr("fill", "lightblue");
 
-    g.selectAll(".label")
-      .data(treeData.descendants())
-      .enter()
+    nodeSelection
       .append("text")
-      .attr("x", (d) => d.x)
-      .attr("y", (d) => d.y)
+      .attr("dx", 50)
+      .attr("dy", 20)
       .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
       .text((d) => d.data.name);
-
-    g.selectAll(".link")
-      .data(treeData.links())
-      .enter()
-      .append("line")
-      .attr("x1", (d) => d.source.x)
-      .attr("y1", (d) => d.source.y + 15)
-      .attr("x2", (d) => d.target.x)
-      .attr("y2", (d) => d.target.y - 15)
-      .attr("stroke", "black");
-
-    // Draw spouse links
-    Array.from(spouseLinks).forEach((link) => {
-      const [sourceName, targetName] = link.split("-");
-      const sourceNode = treeData
-        .descendants()
-        .find((d) => d.data.name === sourceName);
-      const targetNode = treeData
-        .descendants()
-        .find((d) => d.data.name === targetName);
-      if (sourceNode && targetNode) {
-        g.append("line")
-          .attr("x1", sourceNode.x)
-          .attr("y1", sourceNode.y)
-          .attr("x2", targetNode.x)
-          .attr("y2", targetNode.y)
-          .attr("stroke", "blue");
-      }
-    });
   }, [data]);
 
   if (loading) return <div>Loading...</div>;
@@ -116,7 +169,7 @@ const FamilyTree = () => {
 
   return (
     <div>
-      <svg ref={svgRef} width="100%" height="1000"></svg>
+      <svg ref={svgRef} width="1000" height="1000"></svg>
     </div>
   );
 };
