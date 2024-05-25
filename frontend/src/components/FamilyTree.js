@@ -10,7 +10,6 @@ const FamilyTree = () => {
     OPTIONAL MATCH (p)-[:SPOUSE_OF]-(s:Person)
     RETURN p, collect(DISTINCT c) AS children, collect(DISTINCT s) AS spouses
   `);
-  // const writeCypher = useWriteCypher(); // Correctly initialize useWriteCypher inside the component
   const svgRef = useRef();
   const [data, setData] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -19,15 +18,15 @@ const FamilyTree = () => {
     const { name, parent1, parent2 } = newPerson;
 
     const createPersonQuery = `
-      MERGE (p1:Person {name: $parent1})
-      MERGE (p2:Person {name: $parent2})
-      CREATE (c:Person {name: $name})
+      MERGE (p1:Person name: ${parent1})
+      MERGE (p2:Person name: ${parent2})
+      CREATE (c:Person name: ${name})
       MERGE (p1)-[:PARENT_OF]->(c)
       MERGE (p2)-[:PARENT_OF]->(c)
     `;
 
     try {
-      useWriteCypher(createPersonQuery, { name, parent1, parent2 });
+      useWriteCypher(createPersonQuery);
       refetch(); // Refetch the data to update the visualization
     } catch (error) {
       console.error("Error creating new person:", error);
