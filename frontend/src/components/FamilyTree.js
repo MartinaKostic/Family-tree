@@ -1,90 +1,118 @@
 import React, { useRef, useEffect, useState } from "react";
-import { useReadCypher, useWriteCypher } from "use-neo4j";
 import { select } from "d3-selection";
 import { hierarchy, tree } from "d3-hierarchy";
+import axios from "axios";
 import "./FamilyTree.css";
+import Form from "./Form";
 
 const FamilyTree = () => {
-  const { loading, error, records, refetch } = useReadCypher(`
-    MATCH (p:Person)-[:PARENT_OF]->(c:Person)
-    OPTIONAL MATCH (p)-[:SPOUSE_OF]-(s:Person)
-    RETURN p, collect(DISTINCT c) AS children, collect(DISTINCT s) AS spouses
-  `);
-  const svgRef = useRef();
   const [data, setData] = useState(null);
   const [showForm, setShowForm] = useState(false);
-
-  const HandleAddPerson = async (newPerson) => {
-    const { name, parent1, parent2 } = newPerson;
-
-    const createPersonQuery = `
-      MERGE (p1:Person name: ${parent1})
-      MERGE (p2:Person name: ${parent2})
-      CREATE (c:Person name: ${name})
-      MERGE (p1)-[:PARENT_OF]->(c)
-      MERGE (p2)-[:PARENT_OF]->(c)
-    `;
-
-    try {
-      useWriteCypher(createPersonQuery);
-      refetch(); // Refetch the data to update the visualization
-    } catch (error) {
-      console.error("Error creating new person:", error);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const svgRef = useRef();
 
   useEffect(() => {
-    if (records) {
-      const nodes = new Map();
-      const spouseLinks = [];
+    const fetchData = async () => {
+      try {
+        const response = await axios.get("/api/family-tree");
+        console.log(response);
+        const records = response.data;
+        console.log(response.data);
+        const transformedData = transformData(records);
+        setData(transformedData);
+        setLoading(false);
+      } catch (error) {
+        setError(error);
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-      records.forEach((record) => {
-        const parent = record.get("p").properties;
-        const parentId = record.get("p").identity.low;
-        const children = record.get("children").map((child) => ({
-          ...child.properties,
-          id: child.identity.low,
-        }));
-        const spouses = record.get("spouses").map((spouse) => ({
-          ...spouse.properties,
-          id: spouse.identity.low,
-        }));
+  const handleAddPerson = async (newPerson) => {
+    try {
+      const response = await axios.post("/api/add-person", newPerson);
+      const updatedData = transformData(response.data);
+      setData(updatedData);
+      setShowForm(false); // Close the form after successful submission
+    } catch (error) {
+      console.error("Error adding person:", error);
+    }
+  };
+  const transformData = (records) => {
+    const nodes = new Map(); // Initialize a Map to store nodes with unique IDs.
+    const spouseLinks = []; // Initialize an array to store links between spouses.
+    const parentSet = new Set(); // Initialize a Set to keep track of all child IDs.The set syntax binds an object property to a function to be called when there is an attempt to set that property
 
-        if (!nodes.has(parentId)) {
-          nodes.set(parentId, {
-            ...parent,
-            id: parentId,
-            children: [],
-            spouses: [],
-          });
+    records.forEach((record) => {
+      const parent = record.parent;
+      if (!parent) {
+        console.error("Missing parent in record:", record);
+        return;
+      }
+
+      const parentId = parent.id;
+      if (parentId === undefined || parentId === null) {
+        console.error("Missing parent ID in record:", record);
+        return;
+      }
+
+      const children = record.children?.map((child) => ({
+        ...child,
+        id: child.id,
+      }));
+
+      const spouses = record.spouses?.map((spouse) => ({
+        ...spouse,
+        id: spouse.id,
+      }));
+      //Check and Add Parent: If the parent ID is not already in the nodes map, add it with empty children and spouses arrays.
+      if (!nodes.has(parentId)) {
+        nodes.set(parentId, {
+          ...parent,
+          id: parentId,
+          children: [],
+          spouses: [],
+        });
+      }
+      //Adding Children and Spouses to Parent Node
+      children.forEach((child) => {
+        if (!nodes.has(child.id)) {
+          nodes.set(child.id, { ...child, children: [], spouses: [] });
         }
-
-        children.forEach((child) => {
-          if (!nodes.has(child.id)) {
-            nodes.set(child.id, { ...child, children: [], spouses: [] });
-          }
-          nodes.get(parentId).children.push(nodes.get(child.id));
-        });
-
-        spouses.forEach((spouse) => {
-          if (!nodes.has(spouse.id)) {
-            nodes.set(spouse.id, { ...spouse, children: [], spouses: [] });
-          }
-          nodes.get(parentId).spouses.push(nodes.get(spouse.id));
-          spouseLinks.push({ source: parentId, target: spouse.id });
-        });
+        nodes.get(parentId).children.push(nodes.get(child.id));
+        parentSet.add(child.id);
       });
 
-      const rootId = 5; // Replace this with the actual root ID
-      const rootNode = nodes.get(rootId);
-
-      setData({
-        node: rootNode,
+      spouses.forEach((spouse) => {
+        if (!nodes.has(spouse.id)) {
+          nodes.set(spouse.id, { ...spouse, children: [], spouses: [] });
+        }
+        nodes.get(parentId).spouses.push(nodes.get(spouse.id));
+        spouseLinks.push({ source: parentId, target: spouse.id });
+      });
+    });
+    //ode san hardcodirala na paula-> tria dodat neki property za root nodea
+    const rootId = 4;
+    // isto je sta go tu pise ????????? to:  Determine the root node by finding a node that is not anyone's child- Array.from(nodes.keys()).find((id) => !parentSet.has(id)); ili 5 npr
+    const rootNode = nodes.get(rootId);
+    console.log("rootnode", rootNode);
+    if (!rootNode) {
+      console.error("Root node not found. Check the data.");
+      return {
+        node: { children: [] }, // Return a default empty structure
         spouseLinks,
         nodes: Array.from(nodes.values()),
-      });
+      };
     }
-  }, [records]);
+
+    return {
+      node: rootNode,
+      spouseLinks,
+      nodes: Array.from(nodes.values()),
+    };
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -181,83 +209,20 @@ const FamilyTree = () => {
       .text((d) => d.data.name);
   }, [data]);
 
-  const Form = ({ onSubmit, onClose }) => {
-    const [newPerson, setNewPerson] = useState({
-      name: "",
-      parent1: "",
-      parent2: "",
-    });
-
-    const handleFormChange = (e) => {
-      const { name, value } = e.target;
-      setNewPerson({
-        ...newPerson,
-        [name]: value,
-      });
-    };
-
-    const handleFormSubmit = (e) => {
-      e.preventDefault();
-      if (newPerson.name && newPerson.parent1 && newPerson.parent2) {
-        onSubmit(newPerson);
-        onClose();
-      } else {
-        alert("All fields are required.");
-      }
-    };
-
-    return (
-      <form onSubmit={handleFormSubmit}>
-        <div>
-          <label>
-            Name:
-            <input
-              type="text"
-              name="name"
-              value={newPerson.name}
-              onChange={handleFormChange}
-              required
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Parent 1 Name:
-            <input
-              type="text"
-              name="parent1"
-              value={newPerson.parent1}
-              onChange={handleFormChange}
-              required
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Parent 2 Name:
-            <input
-              type="text"
-              name="parent2"
-              value={newPerson.parent2}
-              onChange={handleFormChange}
-              required
-            />
-          </label>
-        </div>
-        <button type="submit">Submit</button>
-      </form>
-    );
-  };
-
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div>
-      <button onClick={() => setShowForm(true)}>Add New Person</button>
+    <div className="family-tree-container">
+      <button
+        className="add-person-button"
+        onClick={() => setShowForm((prevShowForm) => !prevShowForm)}
+      >
+        {showForm ? "Close Form" : "Add New Person"}
+      </button>
       {showForm && (
         <Form
-          onSubmit={(newPerson) => HandleAddPerson(newPerson)}
+          onSubmit={(newPerson) => handleAddPerson(newPerson)}
           onClose={() => setShowForm(false)}
         />
       )}

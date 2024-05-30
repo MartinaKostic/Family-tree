@@ -1,1 +1,22 @@
 svg{background:rgb(255, 239, 239);}
+/* FamilyTree.css */
+.family-tree-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .add-person-button {
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background-color: #b2bac3;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .add-person-button:hover {
+    background-color: lightblue;
+  }
+  
