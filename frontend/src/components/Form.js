@@ -5,6 +5,8 @@ const Form = ({ onSubmit, onClose }) => {
     name: "",
     parent1: "",
     parent2: "",
+    siblingOf: "",
+    spouseOf: "",
   });
 
   const handleFormChange = (e) => {
@@ -17,11 +19,11 @@ const Form = ({ onSubmit, onClose }) => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (newPerson.name && newPerson.parent1 && newPerson.parent2) {
+    if (newPerson.name) {
       onSubmit(newPerson);
       onClose();
     } else {
-      alert("All fields are required.");
+      alert("Name is required.");
     }
   };
 
@@ -47,7 +49,6 @@ const Form = ({ onSubmit, onClose }) => {
             name="parent1"
             value={newPerson.parent1}
             onChange={handleFormChange}
-            required
           />
         </label>
       </div>
@@ -59,7 +60,28 @@ const Form = ({ onSubmit, onClose }) => {
             name="parent2"
             value={newPerson.parent2}
             onChange={handleFormChange}
-            required
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          Sibling Of:
+          <input
+            type="text"
+            name="siblingOf"
+            value={newPerson.siblingOf}
+            onChange={handleFormChange}
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          Spouse Of:
+          <input
+            type="text"
+            name="spouseOf"
+            value={newPerson.spouseOf}
+            onChange={handleFormChange}
           />
         </label>
       </div>
