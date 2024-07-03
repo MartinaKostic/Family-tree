@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { select } from "d3-selection";
-import { hierarchy, tree } from "d3-hierarchy";
+import { hierarchy, tree, linkHorizontal } from "d3";
 import axios from "axios";
 import "./FamilyTree.css";
 import Form from "./Form";
@@ -10,23 +10,23 @@ const FamilyTree = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [personNameToDelete, setPersonNameToDelete] = useState("");
   const svgRef = useRef();
 
+  const fetchData = async () => {
+    try {
+      const response = await axios.get("/api/family-tree");
+      const records = response.data;
+      const transformedData = transformData(records);
+      setData(transformedData);
+      setLoading(false);
+    } catch (error) {
+      setError(error);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("/api/family-tree");
-        console.log(response);
-        const records = response.data;
-        console.log(response.data);
-        const transformedData = transformData(records);
-        setData(transformedData);
-        setLoading(false);
-      } catch (error) {
-        setError(error);
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -35,194 +35,255 @@ const FamilyTree = () => {
       const response = await axios.post("/api/add-person", newPerson);
       const updatedData = transformData(response.data);
       setData(updatedData);
-      setShowForm(false); // Close the form after successful submission
+      setShowForm(false);
     } catch (error) {
       console.error("Error adding person:", error);
     }
   };
-  const transformData = (records) => {
-    const nodes = new Map(); // Initialize a Map to store nodes with unique IDs.
-    const spouseLinks = []; // Initialize an array to store links between spouses.
-    const parentSet = new Set(); // Initialize a Set to keep track of all child IDs.The set syntax binds an object property to a function to be called when there is an attempt to set that property
+  const handleDeletePersonByName = async (personName) => {
+    if (!personName) return; // Optionally prevent empty inputs
 
-    records.forEach((record) => {
-      const parent = record.parent;
-      if (!parent) {
-        console.error("Missing parent in record:", record);
-        return;
+    try {
+      // Send a DELETE request to your backend
+      const response = await axios.delete(
+        `/api/delete-person-by-name/${personName}`
+      );
+      if (response.status === 200) {
+        console.log("Person deleted successfully");
+        // Optionally refresh the data or update the state
+        fetchData(); // Assuming fetchData is a function that fetches the updated tree
+      } else {
+        console.error("Failed to delete person");
       }
-
-      const parentId = parent.id;
-      if (parentId === undefined || parentId === null) {
-        console.error("Missing parent ID in record:", record);
-        return;
-      }
-
-      const children = record.children?.map((child) => ({
-        ...child,
-        id: child.id,
-      }));
-
-      const spouses = record.spouses?.map((spouse) => ({
-        ...spouse,
-        id: spouse.id,
-      }));
-      //Check and Add Parent: If the parent ID is not already in the nodes map, add it with empty children and spouses arrays.
-      if (!nodes.has(parentId)) {
-        nodes.set(parentId, {
-          ...parent,
-          id: parentId,
-          children: [],
-          spouses: [],
-        });
-      }
-      //Adding Children and Spouses to Parent Node
-      children.forEach((child) => {
-        if (!nodes.has(child.id)) {
-          nodes.set(child.id, { ...child, children: [], spouses: [] });
-        }
-        nodes.get(parentId).children.push(nodes.get(child.id));
-        parentSet.add(child.id);
-      });
-
-      spouses.forEach((spouse) => {
-        if (!nodes.has(spouse.id)) {
-          nodes.set(spouse.id, { ...spouse, children: [], spouses: [] });
-        }
-        nodes.get(parentId).spouses.push(nodes.get(spouse.id));
-        spouseLinks.push({ source: parentId, target: spouse.id });
-      });
-    });
-    //ode san hardcodirala na paula-> tria dodat neki property za root nodea
-    const rootId = 4;
-    // isto je sta go tu pise ????????? to:  Determine the root node by finding a node that is not anyone's child- Array.from(nodes.keys()).find((id) => !parentSet.has(id)); ili 5 npr
-    const rootNode = nodes.get(rootId);
-    console.log("rootnode", rootNode);
-    if (!rootNode) {
-      console.error("Root node not found. Check the data.");
-      return {
-        node: { children: [] }, // Return a default empty structure
-        spouseLinks,
-        nodes: Array.from(nodes.values()),
-      };
+    } catch (error) {
+      console.error(
+        "Error deleting person:",
+        error.response?.data?.message || error.message
+      );
     }
+  };
 
+  const transformData = (records) => {
+    const nodes = new Map();
+    const spouseLinks = [];
+
+    // console.log(records);
+    records.forEach((record) => {
+      const { person, children, spouses } = record;
+      if (!person || person.id === undefined || person.id === null) {
+        console.error("Invalid person data", record);
+        return; // Skip malformed records
+      }
+
+      // Every person has children and spouses arrays
+      let nodeData = nodes.get(person.id) || {
+        ...person,
+        children: [],
+        spouses: [],
+      };
+
+      // Setup children
+      children.forEach((child) => {
+        if (child && child.id !== undefined && child.id !== null) {
+          nodes.set(
+            child.id,
+            nodes.get(child.id) || {
+              ...child,
+              children: [],
+              spouses: [],
+              id: child.id,
+            }
+          );
+          nodeData.children.push(child.id); // Store child id
+        }
+      });
+
+      // Setup spouses
+      spouses.forEach((spouse) => {
+        if (spouse && spouse.id !== undefined && spouse.id !== null) {
+          nodes.set(
+            spouse.id,
+            nodes.get(spouse.id) || {
+              ...spouse,
+              children: [],
+              spouses: [],
+              id: spouse.id,
+            }
+          );
+          nodeData.spouses.push(spouse.id); // Store spouse id
+          spouseLinks.push({ source: person.id, target: spouse.id });
+        }
+      });
+
+      nodes.set(person.id, nodeData);
+    });
+
+    // Find the root node or default to the first node
+    const rootId = 4;
     return {
-      node: rootNode,
-      spouseLinks,
+      root: nodes.get(rootId),
       nodes: Array.from(nodes.values()),
+      spouseLinks,
     };
   };
 
   useEffect(() => {
-    if (!data) return;
+    if (!data || !data.root) return;
 
-    const { node, spouseLinks, nodes } = data;
     const svg = select(svgRef.current);
     svg.selectAll("*").remove();
 
     const width = 1000;
     const height = 1000;
-    const g = svg.append("g").attr("transform", "translate(50,50)");
 
-    const root = hierarchy(node, (d) => d.children);
+    const g = svg.append("g").attr("transform", "translate(50,50)");
     const treeLayout = tree().size([width - 100, height - 100]);
+    //we are making hierarchy here. So from nodes children array we take id and find the same node in the nodes (cause id is not enough)
+    const root = hierarchy(data.root, (d) =>
+      d.children.map((childId) =>
+        data.nodes.find((node) => node.id === childId)
+      )
+    );
+
     treeLayout(root);
 
-    // Create a map of the positions
-    const positions = new Map();
-    root.descendants().forEach((d) => {
-      positions.set(d.data.id, { x: d.x, y: d.y, data: d.data });
-    });
-
-    // Determine spouse positioning
-    spouseLinks.forEach((link) => {
-      const sourcePos = positions.get(link.source);
-      //check if it has siblings-so i know where to position spouse
-      const siblings = sourcePos ? sourcePos.data.children || [] : [];
-      let offset = 200; // default offset for spouse
-
-      // Determine if there's space to place spouse on the right
-      let placeRight = true;
-      siblings.forEach((sibling) => {
-        if (positions.get(sibling.id).x > sourcePos.x) {
-          placeRight = false; // space is occupied, place spouse on left
-        }
-      });
-
-      if (!positions.has(link.target)) {
-        positions.set(link.target, {
-          x: sourcePos.x + (placeRight ? offset : -offset),
-          y: sourcePos.y,
-        });
-      }
-    });
-
-    // Draw the links between parents and children, and between spouses
-    //+50added so that lines start from tthe center of a rectangle
     g.selectAll(".link")
       .data(root.links())
       .enter()
       .append("path")
       .attr("class", "link")
       .attr("d", (d) => {
-        return `M${positions.get(d.source.data.id).x + 50},${
-          positions.get(d.source.data.id).y
-        }
-                V${
-                  (positions.get(d.source.data.id).y +
-                    positions.get(d.target.data.id).y) /
-                  2
-                }
-                H${positions.get(d.target.data.id).x + 50}
-                V${positions.get(d.target.data.id).y}`;
+        const sourceX = d.source.x + 50; // Centers the line to the middle of the node
+        const sourceY = d.source.y;
+        const targetX = d.target.x + 50; // Centers the line to the middle of the node
+        const targetY = d.target.y;
+        return `M${sourceX},${sourceY}
+                  V${(sourceY + targetY) / 2}
+                  H${targetX}
+                  V${targetY}`;
       })
       .attr("fill", "none")
       .attr("stroke", "#ccc")
       .attr("stroke-width", 2);
 
-    // Draw spouse links
-    spouseLinks.forEach((link) => {
-      const sourcePos = positions.get(link.source);
-      const targetPos = positions.get(link.target);
-      g.append("line")
-        .attr("x1", sourcePos.x)
-        .attr("y1", sourcePos.y + 15)
-        .attr("x2", targetPos.x)
-        .attr("y2", targetPos.y + 15)
-        .attr("stroke", "blue")
-        .attr("stroke-width", 2)
-        .attr("stroke-opacity", 0.5);
+    g.selectAll(".link")
+      .data(root.links())
+      .enter()
+      .append("path")
+      .attr("class", "link")
+      .attr("d", (d) => {
+        // Calculate the middle point between the source and its spouse if any
+        let sourceX = d.source.x + nodes.width; // Assuming the node width is 100
+        const sourceY = d.source.y;
+        const targetX = d.target.x + nodes.width;
+        const targetY = d.target.y;
+
+        // If the source has a spouse, adjust the starting x coordinate
+        if (d.source.data.spouses.length > 0) {
+          const spouseId = d.source.data.spouses[0]; // Assuming only one spouse
+          const spouse = data.nodes.find((node) => node.id === spouseId);
+          if (spouse) {
+            const spouseX = spouse.x + 50; // Assuming the node width is 100
+            sourceX = (sourceX + spouseX) / 2; // Middle point between the two
+          }
+        }
+
+        // Path from the middle point between spouses to the target
+        return `M${sourceX},${sourceY}
+            V${(sourceY + targetY) / 2}
+            H${targetX}
+            V${targetY}`;
+      })
+      .attr("fill", "none")
+      .attr("stroke", "#ccc")
+      .attr("stroke-width", 2);
+
+    data.spouseLinks.forEach((link) => {
+      //
+      const sourceNode = root
+        .descendants()
+        .find((d) => d.data.id === link.source);
+      const targetNode = data.nodes.find((d) => d.id === link.target); // Find from the full dataset
+
+      if (sourceNode && targetNode) {
+        // console.log(
+        //   `Drawing link between: ${sourceNode.name} and ${targetNode.name}`
+        // );
+        const offsetX = 150;
+
+        // console.log("target", targetNode.name);
+        g.append("path")
+          .attr("class", "spouse-link")
+          .attr(
+            "d",
+            linkHorizontal()
+              .x((d) => d.y + 30) // x position on the screen should map to y value of the data
+              .y((d) => d.x + 15)(
+              // y position on the screen should map to x value of the data
+              {
+                source: { x: sourceNode.y, y: sourceNode.x }, // Move the spouse node right next to the source node
+                target: {
+                  x: sourceNode.y,
+                  y: sourceNode.x + offsetX,
+                },
+              }
+            )
+          )
+          .attr("stroke", "red")
+          .attr("fill", "none");
+
+        // Draw the spouse node
+        g.append("rect")
+          .attr("x", sourceNode.x + offsetX)
+          .attr("y", sourceNode.y) // Align vertically centered
+          .attr("width", 100)
+          .attr("height", 30)
+          .style("fill", "lightpink");
+
+        console.log(sourceNode, targetNode);
+
+        // Add text label for the spouse
+        g.append("text")
+          .attr("dy", "1.3em")
+          .attr("text-anchor", "middle")
+          .attr("x", sourceNode.x + offsetX + 50) // Centering text within the rectangle
+          .attr("y", sourceNode.y) // Slightly offset from the top of the rectangle
+          .text(targetNode.name);
+
+        g.append("image")
+          .attr("xlink:href", targetNode.imageUrl) // Ensure each node data has an imageUrl
+          .attr("width", 50) // Set the image size
+          .attr("height", 50)
+          .attr("x", sourceNode.x + offsetX + 25) // Adjust x to center the image
+          .attr("y", sourceNode.y - 50); // Adjust y to place above the text
+      }
     });
 
-    // Draw nodes
-    const allNodes = root.descendants().concat(
-      spouseLinks.map((link) => ({
-        ...link,
-        x: positions.get(link.target).x,
-        y: positions.get(link.target).y,
-        data: nodes.find((n) => n.id === link.target),
-      }))
-    );
-
-    const nodeSelection = g
+    const nodes = g
       .selectAll(".node")
-      .data(allNodes)
+      .data(root.descendants())
       .enter()
       .append("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y})`);
-
-    nodeSelection
+    // Append images
+    nodes
+      .append("image")
+      .attr("xlink:href", (d) => d.data.imageUrl) // Ensure each node data has an imageUrl
+      .attr("width", 50) // Set the image size
+      .attr("height", 50)
+      .attr("x", 25) // Adjust x to center the image
+      .attr("y", -50); // Adjust y to place above the text
+    nodes
       .append("rect")
       .attr("width", 100)
       .attr("height", 30)
       .attr("fill", "lightblue");
 
-    nodeSelection
+    nodes
       .append("text")
-      .attr("dx", 50)
-      .attr("dy", 20)
+      .attr("dy", "1.3em")
+      .attr("x", 50)
       .attr("text-anchor", "middle")
       .text((d) => d.data.name);
   }, [data]);
@@ -234,18 +295,25 @@ const FamilyTree = () => {
     <div className="family-tree-container">
       <button
         className="add-person-button"
-        onClick={() => setShowForm((prevShowForm) => !prevShowForm)}
+        onClick={() => setShowForm(!showForm)}
       >
         {showForm ? "Close Form" : "Add New Person"}
       </button>
       {showForm && (
-        <Form
-          onSubmit={(newPerson) => handleAddPerson(newPerson)}
-          onClose={() => setShowForm(false)}
-        />
+        <Form onSubmit={handleAddPerson} onClose={() => setShowForm(false)} />
       )}
+      <input
+        type="text"
+        value={personNameToDelete}
+        onChange={(e) => setPersonNameToDelete(e.target.value)}
+        placeholder="Enter name to delete"
+      />
+      <button onClick={() => handleDeletePersonByName(personNameToDelete)}>
+        Delete Person
+      </button>
       <svg ref={svgRef} width="1000" height="1000"></svg>
     </div>
   );
 };
+
 export default FamilyTree;
