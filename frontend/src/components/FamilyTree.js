@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { select } from "d3-selection";
-import { hierarchy, tree, linkHorizontal } from "d3";
+import { hierarchy, tree, linkHorizontal, zoom, pointer } from "d3";
 import axios from "axios";
 import "./FamilyTree.css";
 import Form from "./Form";
@@ -146,6 +146,14 @@ const FamilyTree = () => {
     );
 
     treeLayout(root);
+    // Initialize zoom behavior
+    const zoomEffect = zoom()
+      .scaleExtent([0.5, 3]) // Limit zoom scale
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform); // Apply new transform to the g element
+      });
+
+    svg.call(zoomEffect); // Apply zoom behavior to the SVG element
 
     g.selectAll(".link")
       .data(root.links())
@@ -286,6 +294,151 @@ const FamilyTree = () => {
       .attr("x", 50)
       .attr("text-anchor", "middle")
       .text((d) => d.data.name);
+
+    // nodes.each(function (d) {
+    //   const node = select(this);
+    //   const nodeWidth = 100; // Assuming a standard width for simplicity
+    //   const nodeHeight = 30; // Assuming a standard height for simplicity
+
+    //   // Append a group to each node which will contain the icon and text
+    //   const actionGroup = node
+    //     .append("g")
+    //     .attr("class", "action-group")
+    //     .style("visibility", "hidden"); // Start with the group hidden
+
+    //   // Add the "+" icon to the group
+    //   actionGroup
+    //     .append("text")
+    //     .text("+")
+    //     .attr("x", nodeWidth / 2)
+    //     .attr("y", nodeHeight + 20) // Position below the node
+    //     .attr("class", "add-icon")
+    //     .attr("text-anchor", "middle");
+
+    //   // Add the action text
+    //   actionGroup
+    //     .append("text")
+    //     .attr("x", nodeWidth / 2)
+    //     .attr("y", nodeHeight + 10) // Position it above the icon
+    //     .attr("class", "action-text")
+    //     .attr("text-anchor", "middle")
+    //     .style("font-size", "10px")
+    //     .style("fill", "gray");
+
+    //   // Set mouseenter and mouseleave events
+    //   node
+    //     .on("mouseenter", function (event) {
+    //       // Determine the relative mouse position
+    //       const [x, y] = pointer(event, this); // Get mouse position relative to the current element
+    //       let action = "";
+
+    //       if (x < nodeWidth / 3) {
+    //         // Left third for spouse
+    //         action = "Add Spouse";
+    //       } else if (x > (2 * nodeWidth) / 3) {
+    //         // Right third for spouse
+    //         action = "Add Spouse";
+    //       } else if (y < nodeHeight) {
+    //         // Bottom area for child
+    //         action = "Add Child";
+    //       }
+
+    //       // Update text based on the action
+    //       node.select(".action-text").text(action);
+
+    //       // Make the group visible
+    //       actionGroup.style("visibility", "visible");
+    //     })
+    //     .on("mouseleave", function () {
+    //       // Hide the group on mouse leave
+    //       actionGroup.style("visibility", "hidden");
+    //     });
+    // });
+    nodes.each(function (d) {
+      const node = select(this);
+      const nodeWidth = 100; // Assuming a standard width for simplicity
+      const nodeHeight = 30; // Assuming a standard height for simplicity
+
+      // Append a group to each node which will contain the icon and text
+      const actionGroup = node
+        .append("g")
+        .attr("class", "action-group")
+        .style("visibility", "hidden"); // Start with the group hidden
+
+      // Add the "+" icon to the group, initially not positioned
+      const addActionIcon = actionGroup
+        .append("text")
+        .text("+")
+        .attr("class", "add-icon")
+        .attr("text-anchor", "middle");
+
+      // Create a rectangle for the text bubble, initially not visible
+      const textBubble = actionGroup
+        .append("rect")
+        .style("fill", "white")
+        .style("stroke", "black")
+        .style("opacity", 0.85)
+        .attr("rx", 5) // Rounded corners
+        .attr("ry", 5)
+        .attr("visibility", "hidden");
+
+      // Add the action text, initially not positioned
+      const actionText = actionGroup
+        .append("text")
+        .attr("class", "action-text")
+        .attr("text-anchor", "middle")
+        .style("font-size", "10px")
+        .style("fill", "black");
+
+      // Set mouseenter and mouseleave events
+      node
+        .on("mouseenter", function (event) {
+          const [x, y] = pointer(event, this); // Get mouse position relative to the current element
+          let action = "";
+          let iconX = 0;
+          let iconY = 0;
+
+          if (x < nodeWidth / 3) {
+            action = "Add Spouse";
+            iconX = 0;
+            iconY = nodeHeight / 2;
+          } else if (x > (2 * nodeWidth) / 3) {
+            action = "Add Spouse";
+            iconX = nodeWidth;
+            iconY = nodeHeight / 2;
+          } else if (y < nodeHeight) {
+            action = "Add Child";
+            iconX = nodeWidth / 2;
+            iconY = nodeHeight + 20;
+          }
+
+          if (action) {
+            addActionIcon.attr("x", iconX).attr("y", iconY);
+
+            // Update and position text based on the action
+            actionText
+              .text(action)
+              .attr("x", iconX)
+              .attr("y", iconY - 20);
+
+            // Size and position the text bubble
+            const textSize = actionText.node().getBBox();
+            textBubble
+              .attr("x", textSize.x - 5)
+              .attr("y", textSize.y - 5)
+              .attr("width", textSize.width + 10)
+              .attr("height", textSize.height + 10)
+              .attr("visibility", "visible");
+
+            // Make the group visible
+            actionGroup.style("visibility", "visible");
+          }
+        })
+        .on("mouseleave", function () {
+          // Hide the group on mouse leave
+          actionGroup.style("visibility", "hidden");
+        });
+    });
   }, [data]);
 
   if (loading) return <div>Loading...</div>;
@@ -293,6 +446,18 @@ const FamilyTree = () => {
 
   return (
     <div className="family-tree-container">
+      <div
+        id="tooltip"
+        style={{
+          position: "absolute",
+          visibility: "hidden",
+          background: "lightgrey",
+          padding: "5px",
+          borderRadius: "5px",
+        }}
+      >
+        Tooltip Text
+      </div>
       <button
         className="add-person-button"
         onClick={() => setShowForm(!showForm)}
