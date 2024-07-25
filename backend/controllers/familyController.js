@@ -1,5 +1,38 @@
 import { getSession } from "../config/db.js";
 
+export const updatePersonInDatabase = async (personId, updateData) => {
+  const session = getSession();
+  // Building the SET part of the query dynamically based on the properties provided
+  const sets = Object.keys(updateData)
+    .map((key) => `p.${key} = $${key}`)
+    .join(", ");
+
+  const query = `
+    MATCH (p:Person)
+    WHERE id(p) = $personId
+    SET ${sets}
+    RETURN p `;
+
+  try {
+    const result = await session.run(query, { personId, ...updateData });
+    console.log(result.records);
+    if (result.records.length > 0) {
+      // Assuming the first record is the person updated
+      return {
+        ...result.records[0].get("p").properties,
+        id: result.records[0].get("p").identity.toInt(), // or .toNumber()
+      };
+    } else {
+      // throw new Error("No person found with the given ID.");
+    }
+  } catch (error) {
+    console.error("Error updating person in database:", error);
+    throw error; // Re-throw the error for further handling
+  } finally {
+    await session.close();
+  }
+};
+
 const fetchFamilyTree = async (session) => {
   const result = await session.run(`
   MATCH (p:Person)
@@ -44,52 +77,30 @@ export const getFamilyTree = async (_req, res) => {
 
 export const addPerson = async (req, res) => {
   const session = getSession();
-  const { name, parent1, parent2, siblingOf, spouseOf } = req.body;
+  console.log("data", req.body);
+  const { firstname, birthdate, id, type } = req.body;
 
   let createPersonQuery = `
-    MERGE (c:Person {name: $name})
+    CREATE (c:Person {name: $firstname, birthDate: $birthdate})
+    WITH c
   `;
 
-  let parameters = { name };
+  let parameters = { firstname, birthdate, id };
 
-  if (parent1) {
+  if (type === "spouse") {
     createPersonQuery += `
-    MERGE (p1:Person {name: $parent1})
-    MERGE (p1)-[:PARENT_OF]->(c)
-  `;
-    parameters.parent1 = parent1;
-  }
-
-  if (parent2) {
-    createPersonQuery += `
-    MERGE (p2:Person {name: $parent2})
-    MERGE (p2)-[:PARENT_OF]->(c)
-  `;
-    parameters.parent2 = parent2;
-  }
-
-  // Ensure spouses are linked if both parents are specified
-  if (parent1 && parent2) {
-    createPersonQuery += `
-    MERGE (p1)-[:SPOUSE_OF]->(p2)
-  `;
-  }
-
-  if (siblingOf) {
-    createPersonQuery += `
-      MATCH (s:Person {name: $siblingOf})
-      MATCH (s)-[:PARENT_OF]->(p)<-[:PARENT_OF]-(c)
+      MATCH (p:Person)
+      WHERE id(p) = $id
+      MERGE (p)-[:SPOUSE_OF]->(c)
     `;
-    parameters.siblingOf = siblingOf;
+  } else if (type === "child") {
+    createPersonQuery += `
+      MATCH (p:Person)
+      WHERE id(p) = $id
+      MERGE (p)-[:PARENT_OF]->(c)
+    `;
   }
 
-  if (spouseOf) {
-    createPersonQuery += `
-      MERGE (s:Person {name: $spouseOf})
-      MERGE (s)-[:SPOUSE_OF]->(c)
-    `;
-    parameters.spouseOf = spouseOf;
-  }
   try {
     await session.run(createPersonQuery, parameters);
     const records = await fetchFamilyTree(session); // Fetch the updated family tree
@@ -128,5 +139,19 @@ export const deletePersonByName = async (req, res) => {
       .json({ error: "Failed to delete person: " + error.message });
   } finally {
     await session.close();
+  }
+};
+
+export const editPersonDetails = async (req, res) => {
+  const { personId } = req.params;
+  const updateData = req.body;
+  console.log(personId, updateData);
+  try {
+    const updatedPerson = await updatePersonInDatabase(+personId, updateData);
+    console.log("UPDATED PERSONA", updatedPerson);
+    res.json(updatedPerson);
+  } catch (error) {
+    console.error("Failed to update person:", error);
+    res.status(500).send("Failed to update person.");
   }
 };
