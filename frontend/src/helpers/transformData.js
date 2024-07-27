@@ -1,4 +1,4 @@
-export const transformData = (records) => {
+export const transformData = (records, rootNode) => {
   const nodes = new Map();
   const spouseLinks = [];
 
@@ -53,10 +53,8 @@ export const transformData = (records) => {
     nodes.set(person.id, nodeData);
   });
 
-  // Find the root node or default to the first node
-  const rootId = 4;
   return {
-    root: nodes.get(rootId),
+    root: nodes.get(rootNode.id),
     nodes: Array.from(nodes.values()),
     spouseLinks,
   };

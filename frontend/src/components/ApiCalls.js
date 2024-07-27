@@ -1,12 +1,23 @@
-// api.js
 import axios from "axios";
 import { transformData } from "../helpers/transformData";
 
+const fetchRootNode = async () => {
+  try {
+    const response = await axios.get("/api/get-root-node");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching root node:", error);
+  }
+};
+
 export const fetchFamilyTree = async () => {
-  const response = await axios.get("/api/family-tree");
-  const data = response.data;
-  const records = transformData(data);
-  return records;
+  const rootNode = await fetchRootNode();
+  if (rootNode) {
+    const response = await axios.get("/api/family-tree");
+    const data = response.data;
+    const records = transformData(data, rootNode);
+    return records;
+  }
 };
 
 export const addPerson = async (data) => {
@@ -30,5 +41,23 @@ export const editPerson = async (personId, updateData) => {
   } catch (error) {
     console.error("Error updating person:", error);
     throw error; // Re-throw to handle it in the calling component
+  }
+};
+
+export const signUp = async (userData) => {
+  try {
+    const response = await axios.post("api/signup", userData);
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+export const signIn = async (userData) => {
+  try {
+    const response = await axios.post("api/signin", userData);
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
   }
 };

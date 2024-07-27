@@ -1,4 +1,5 @@
 import { getSession } from "../config/db.js";
+import bcrypt from "bcrypt";
 
 export const updatePersonInDatabase = async (personId, updateData) => {
   const session = getSession();
@@ -153,5 +154,110 @@ export const editPersonDetails = async (req, res) => {
   } catch (error) {
     console.error("Failed to update person:", error);
     res.status(500).send("Failed to update person.");
+  }
+};
+
+export const getRootNode = async (_req, res) => {
+  const session = getSession();
+  try {
+    const result = await session.run(
+      "MATCH (n:Person {isRoot: true}) RETURN n LIMIT 1"
+    );
+    if (result.records.length > 0) {
+      const rootNode = result.records[0].get("n").properties;
+      res.status(200).json(rootNode);
+    } else {
+      res.status(404).json({ message: "Root node not found." });
+    }
+  } catch (error) {
+    console.error("Failed to fetch root node:", error);
+    res.status(500).json({ error: "Failed to fetch root node." });
+  } finally {
+    session.close();
+  }
+};
+
+const SALT_ROUNDS = 10;
+
+export const signUp = async (req, res) => {
+  const { name, username, email, password } = req.body;
+  const session = getSession();
+
+  try {
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const info = {
+      name: name,
+      username: username,
+      email: email,
+      hashedPassword: hashedPassword, // Ensure this key matches the one used in the query
+    };
+
+    const query = `
+      CREATE (u:User {name: $name, username: $username, password: $hashedPassword, email: $email})
+      RETURN u`;
+
+    const result = await session.run(query, info);
+
+    if (result.records.length > 0) {
+      const user = result.records[0].get("u").properties;
+      res.status(201).json({
+        message: "User successfully created",
+        user: { username: user.username, email: user.email },
+      });
+    } else {
+      throw new Error("User not created");
+    }
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ error: "Failed to create user." });
+  } finally {
+    await session.close();
+  }
+};
+
+export const signIn = async (req, res) => {
+  const { username, password } = req.body;
+  const session = getSession();
+
+  const query = `
+    MATCH (u:User {username: $username})
+    RETURN u.password AS hashedPassword, id(u) AS userId, u.username AS username, u.email AS email`;
+
+  try {
+    const result = await session.run(query, { username });
+
+    if (result.records.length === 0) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const userRecord = result.records[0];
+    const hashedPassword = userRecord.get("hashedPassword");
+
+    const passwordIsValid = await bcrypt.compare(password, hashedPassword);
+    if (!passwordIsValid) {
+      res.status(401).json({ message: "Invalid password" });
+      return;
+    }
+
+    // Assuming the use of some form of session or token management
+    // For example, setting a session ID:
+    // req.session.userId = userRecord.get("userId");
+
+    res.json({
+      message: "Successfully signed in",
+      user: {
+        id: userRecord.get("userId"),
+        username: userRecord.get("username"),
+        email: userRecord.get("email"),
+      },
+    });
+  } catch (error) {
+    console.error("Sign-in error:", error);
+    res.status(500).json({ error: "Failed to sign in: " + error.message });
+  } finally {
+    await session.close();
   }
 };
