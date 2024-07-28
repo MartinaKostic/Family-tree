@@ -7,10 +7,12 @@ import {
   signUp,
   signIn,
   getRootNode,
+  createRootNode,
 } from "../controllers/familyController.js";
 
 const router = express.Router();
 
+router.post("/create-root-node", createRootNode);
 router.get("/family-tree", getFamilyTree);
 router.get("/get-root-node", getRootNode);
 router.post("/add-person", addPerson);

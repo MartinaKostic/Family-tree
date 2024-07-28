@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { addPerson } from "../ApiCalls";
+import { addPerson } from "../../api/ApiCalls";
 
 const FormModal = ({ show, onClose, title, details, getNewData }) => {
   const [newPerson, setNewPerson] = useState({

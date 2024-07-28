@@ -1,9 +1,9 @@
-import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import { transformData } from "../helpers/transformData";
 
 const fetchRootNode = async () => {
   try {
-    const response = await axios.get("/api/get-root-node");
+    const response = await axiosInstance.get("/api/get-root-node");
     return response.data;
   } catch (error) {
     console.error("Error fetching root node:", error);
@@ -13,7 +13,7 @@ const fetchRootNode = async () => {
 export const fetchFamilyTree = async () => {
   const rootNode = await fetchRootNode();
   if (rootNode) {
-    const response = await axios.get("/api/family-tree");
+    const response = await axiosInstance.get("/api/family-tree");
     const data = response.data;
     const records = transformData(data, rootNode);
     return records;
@@ -22,18 +22,20 @@ export const fetchFamilyTree = async () => {
 
 export const addPerson = async (data) => {
   console.log("adding person");
-  const response = await axios.post("/api/add-person", data);
+  const response = await axiosInstance.post("/api/add-person", data);
   return response;
 };
 
 export const deletePersonByName = async (name) => {
-  const response = await axios.delete(`/api/delete-person-by-name/${name}`);
+  const response = await axiosInstance.delete(
+    `/api/delete-person-by-name/${name}`
+  );
   return response.status === 200;
 };
 
 export const editPerson = async (personId, updateData) => {
   try {
-    const response = await axios.put(
+    const response = await axiosInstance.put(
       `/api/update-person/${personId}`,
       updateData
     );
@@ -46,7 +48,7 @@ export const editPerson = async (personId, updateData) => {
 
 export const signUp = async (userData) => {
   try {
-    const response = await axios.post("api/signup", userData);
+    const response = await axiosInstance.post("api/signup", userData);
     return response.data;
   } catch (error) {
     throw error.response.data;
@@ -55,9 +57,31 @@ export const signUp = async (userData) => {
 
 export const signIn = async (userData) => {
   try {
-    const response = await axios.post("api/signin", userData);
+    const response = await axiosInstance.post("api/signin", userData);
     return response.data;
   } catch (error) {
     throw error.response.data;
+  }
+};
+
+export const addRootNode = async (rootNodeDetails) => {
+  try {
+    const response = await axiosInstance.post(
+      "/api/create-root-node",
+      rootNodeDetails,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return response.data; // This will return the created root node details from the server
+  } catch (error) {
+    console.error(
+      "Failed to add root node:",
+      error.response ? error.response.data : error.message
+    );
+    throw error; // Re-throw to handle it in the calling component for user feedback
   }
 };

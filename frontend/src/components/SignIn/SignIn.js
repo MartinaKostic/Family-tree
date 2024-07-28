@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { signIn } from "../ApiCalls";
+import { signIn } from "../../api/ApiCalls";
+import { useNavigate } from "react-router-dom";
 
 function SignIn() {
   const [formData, setFormData] = useState({
@@ -7,6 +8,7 @@ function SignIn() {
     password: "",
   });
   const [error, setError] = useState("");
+  let navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -18,35 +20,50 @@ function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await signIn(formData);
-      console.log("Signin success:", data);
-      // Redirect or manage the user state
+      const response = await signIn(formData);
+      const { token } = response.data;
+      localStorage.setItem("token", token); // Store the token
+      navigate("/familytree");
     } catch (err) {
       setError(err.message || "Failed to sign in");
     }
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          placeholder="Username"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Sign In</button>
-        {error && <p>{error}</p>}
+    <div className="flex justify-center items-center bg-gray-100 ">
+      <form
+        onSubmit={handleSubmit}
+        className="py-6 px-6 bg-white rounded-lg shadow-md w-full max-w-sm"
+      >
+        <div className="mb-4">
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Username"
+            required
+            className="input input-bordered w-full"
+          />
+        </div>
+        <div className="mb-4">
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            required
+            className="input input-bordered w-full"
+          />
+        </div>
+        <button
+          type="submit"
+          className="btn btn-primary px-8 bg-blue-400 rounded hover:bg-blue-600 transition duration-200 ease-in-out text-white  "
+        >
+          Sign In
+        </button>
+        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
       </form>
     </div>
   );

@@ -1,5 +1,36 @@
 import { getSession } from "../config/db.js";
 import bcrypt from "bcrypt";
+const jwt = require("jsonwebtoken");
+
+export const createRootNode = async (req, res) => {
+  const session = getSession();
+  const { userId, name, birthDate, deathDate, job, description } = req.body;
+
+  const query = `
+    CREATE (n:Person {name: $name, birthDate: $birthDate, deathDate: $deathDate, job: $job, description: $description, isRoot: true})
+    WITH n
+    MATCH (u:User {id: $userId})
+    CREATE (u)-[:HAS_ROOT]->(n)
+    RETURN n
+  `;
+
+  try {
+    await session.run(query, {
+      userId,
+      name,
+      birthDate,
+      deathDate,
+      job,
+      description,
+    });
+    res.status(201).send("Root node created successfully");
+  } catch (error) {
+    console.error("Error creating root node:", error);
+    res.status(500).send("Error creating root node");
+  } finally {
+    session.close();
+  }
+};
 
 export const updatePersonInDatabase = async (personId, updateData) => {
   const session = getSession();
@@ -177,6 +208,7 @@ export const getRootNode = async (_req, res) => {
   }
 };
 
+const JWT_SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = 10;
 
 export const signUp = async (req, res) => {
@@ -196,22 +228,51 @@ export const signUp = async (req, res) => {
 
     const query = `
       CREATE (u:User {name: $name, username: $username, password: $hashedPassword, email: $email})
-      RETURN u`;
+      RETURN u.username AS username, u.email AS email, id(u) AS userId`;
 
     const result = await session.run(query, info);
+
+    if (result.records.length === 0) {
+      throw new Error("User not created");
+    }
+
+    const user = result.records[0];
+    const userId = user.get("userId");
+
+    // Generate a JWT
+    const token = jwt.sign(
+      {
+        userId: userId,
+        username: user.get("username"),
+        email: user.get("email"),
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" } // Token expires in 1 hour
+    );
 
     if (result.records.length > 0) {
       const user = result.records[0].get("u").properties;
       res.status(201).json({
         message: "User successfully created",
-        user: { username: user.username, email: user.email },
+        user: { username: user.username, email: user.email, id: userId },
+        token,
       });
     } else {
       throw new Error("User not created");
     }
   } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({ error: "Failed to create user." });
+    if (error.message.includes("ConstraintValidationFailed")) {
+      res.status(409).json({
+        message: "Username or email already exists",
+        error: error.message,
+      });
+    } else {
+      console.error("Signup error:", error);
+      res.status(500).json({
+        message: "Failed to create user",
+        error: error.message,
+      });
+    }
   } finally {
     await session.close();
   }
@@ -242,12 +303,20 @@ export const signIn = async (req, res) => {
       return;
     }
 
-    // Assuming the use of some form of session or token management
-    // For example, setting a session ID:
-    // req.session.userId = userRecord.get("userId");
+    // Generate a JWT
+    const token = jwt.sign(
+      {
+        userId: userRecord.get("userId"),
+        username: userRecord.get("username"),
+        email: userRecord.get("email"),
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" } // Token expires in 1 hour
+    );
 
     res.json({
       message: "Successfully signed in",
+      token,
       user: {
         id: userRecord.get("userId"),
         username: userRecord.get("username"),

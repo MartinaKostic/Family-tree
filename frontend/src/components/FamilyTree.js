@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import FormModal from "./modals/FormModal.js";
 import PersonDetailsModal from "./modals/PersonDetailsModal.js";
 import TreeVisualization from "./TreeVisualization.js";
-import { fetchFamilyTree, deletePersonByName, editPerson } from "./ApiCalls.js";
-import SignUp from "./SignUp/SignUp.js";
+import {
+  fetchFamilyTree,
+  deletePersonByName,
+  editPerson,
+} from "../api/ApiCalls.js";
 
 const FamilyTree = () => {
   const [personNameToDelete, setPersonNameToDelete] = useState("");
@@ -54,7 +57,6 @@ const FamilyTree = () => {
  */
   return (
     <div className="flex flex-col items-center p-5 bg-[rgb(255,239,239)]">
-      <SignUp></SignUp>
       <input
         type="text"
         value={personNameToDelete}
