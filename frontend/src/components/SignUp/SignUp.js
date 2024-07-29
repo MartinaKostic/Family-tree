@@ -20,10 +20,12 @@ function SignUp() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await signUp(formData);
-      const { token } = response.data;
-      localStorage.setItem("token", token); // Store the token
+      console.log("Sign Up Response:", response);
+      localStorage.setItem("token", response.token); // Store the token
+      localStorage.setItem("userId", response.user.id.low);
       navigate("/add-root-node"); // Redirect to root node form page
     } catch (err) {
       setError(err.message || "Failed to sign up");

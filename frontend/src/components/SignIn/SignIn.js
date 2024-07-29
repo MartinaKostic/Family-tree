@@ -21,8 +21,8 @@ function SignIn() {
     e.preventDefault();
     try {
       const response = await signIn(formData);
-      const { token } = response.data;
-      localStorage.setItem("token", token); // Store the token
+      localStorage.setItem("token", response.token); // Store the token
+      localStorage.setItem("userId", response.user.id.low);
       navigate("/familytree");
     } catch (err) {
       setError(err.message || "Failed to sign in");

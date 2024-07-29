@@ -1,15 +1,16 @@
 import { getSession } from "../config/db.js";
 import bcrypt from "bcrypt";
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 export const createRootNode = async (req, res) => {
   const session = getSession();
   const { userId, name, birthDate, deathDate, job, description } = req.body;
-
+  console.log("ui", userId);
   const query = `
     CREATE (n:Person {name: $name, birthDate: $birthDate, deathDate: $deathDate, job: $job, description: $description, isRoot: true})
     WITH n
-    MATCH (u:User {id: $userId})
+    MATCH (u:User)
+    WHERE ID(u) = toInteger($userId)
     CREATE (u)-[:HAS_ROOT]->(n)
     RETURN n
   `;
@@ -214,7 +215,6 @@ const SALT_ROUNDS = 10;
 export const signUp = async (req, res) => {
   const { name, username, email, password } = req.body;
   const session = getSession();
-
   try {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -236,32 +236,36 @@ export const signUp = async (req, res) => {
       throw new Error("User not created");
     }
 
-    const user = result.records[0];
-    const userId = user.get("userId");
+    const userRecord = result.records[0];
+    const userId = userRecord.get("userId");
+    const usernameReturned = userRecord.get("username");
+    const emailReturned = userRecord.get("email");
 
     // Generate a JWT
     const token = jwt.sign(
       {
         userId: userId,
-        username: user.get("username"),
-        email: user.get("email"),
+        username: usernameReturned,
+        email: emailReturned,
       },
       JWT_SECRET,
       { expiresIn: "1h" } // Token expires in 1 hour
     );
 
-    if (result.records.length > 0) {
-      const user = result.records[0].get("u").properties;
-      res.status(201).json({
-        message: "User successfully created",
-        user: { username: user.username, email: user.email, id: userId },
-        token,
-      });
-    } else {
-      throw new Error("User not created");
-    }
+    res.status(201).json({
+      message: "User successfully created",
+      token,
+      user: {
+        id: userId,
+        username: usernameReturned,
+        email: emailReturned,
+      },
+    });
   } catch (error) {
-    if (error.message.includes("ConstraintValidationFailed")) {
+    if (
+      error.message.includes("ConstraintValidationFailed") ||
+      error.message.includes("AlreadyExists")
+    ) {
       res.status(409).json({
         message: "Username or email already exists",
         error: error.message,

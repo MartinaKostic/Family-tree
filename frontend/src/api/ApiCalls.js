@@ -3,7 +3,7 @@ import { transformData } from "../helpers/transformData";
 
 const fetchRootNode = async () => {
   try {
-    const response = await axiosInstance.get("/api/get-root-node");
+    const response = await axiosInstance.get("/get-root-node");
     return response.data;
   } catch (error) {
     console.error("Error fetching root node:", error);
@@ -13,7 +13,7 @@ const fetchRootNode = async () => {
 export const fetchFamilyTree = async () => {
   const rootNode = await fetchRootNode();
   if (rootNode) {
-    const response = await axiosInstance.get("/api/family-tree");
+    const response = await axiosInstance.get("/family-tree");
     const data = response.data;
     const records = transformData(data, rootNode);
     return records;
@@ -22,7 +22,7 @@ export const fetchFamilyTree = async () => {
 
 export const addPerson = async (data) => {
   console.log("adding person");
-  const response = await axiosInstance.post("/api/add-person", data);
+  const response = await axiosInstance.post("/add-person", data);
   return response;
 };
 
@@ -48,7 +48,7 @@ export const editPerson = async (personId, updateData) => {
 
 export const signUp = async (userData) => {
   try {
-    const response = await axiosInstance.post("api/signup", userData);
+    const response = await axiosInstance.post("/signup", userData);
     return response.data;
   } catch (error) {
     throw error.response.data;
@@ -57,7 +57,7 @@ export const signUp = async (userData) => {
 
 export const signIn = async (userData) => {
   try {
-    const response = await axiosInstance.post("api/signin", userData);
+    const response = await axiosInstance.post("/signin", userData);
     return response.data;
   } catch (error) {
     throw error.response.data;
@@ -67,7 +67,7 @@ export const signIn = async (userData) => {
 export const addRootNode = async (rootNodeDetails) => {
   try {
     const response = await axiosInstance.post(
-      "/api/create-root-node",
+      "/create-root-node",
       rootNodeDetails,
       {
         headers: {
