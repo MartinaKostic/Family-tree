@@ -3,7 +3,8 @@ import { transformData } from "../helpers/transformData";
 
 const fetchRootNode = async () => {
   try {
-    const response = await axiosInstance.get("/get-root-node");
+    const userId = localStorage.getItem("userId");
+    const response = await axiosInstance.get(`/get-root-node?userId=${userId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching root node:", error);

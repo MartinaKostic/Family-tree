@@ -189,15 +189,32 @@ export const editPersonDetails = async (req, res) => {
   }
 };
 
-export const getRootNode = async (_req, res) => {
+export const getRootNode = async (req, res) => {
+  const userId = +req.query.userId;
   const session = getSession();
   try {
     const result = await session.run(
-      "MATCH (n:Person {isRoot: true}) RETURN n LIMIT 1"
+      `
+        MATCH (u:User)-[:HAS_ROOT]->(root:Person)
+        WHERE id(u) = $userId
+        RETURN root LIMIT 1
+        `,
+      { userId } // Pass userId as a parameter to the query
     );
+
+    /*  const result = await session.run(
+      "MATCH (n:Person {isRoot: true}) RETURN n LIMIT 1"
+    ); */
+
     if (result.records.length > 0) {
-      const rootNode = result.records[0].get("n").properties;
-      res.status(200).json(rootNode);
+      const rootNode = result.records[0].get("root");
+      const properties = rootNode.properties;
+      const returnObject = {
+        ...properties,
+        id: rootNode.identity.low,
+      };
+
+      res.status(200).json(returnObject);
     } else {
       res.status(404).json({ message: "Root node not found." });
     }
