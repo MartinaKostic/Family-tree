@@ -1,0 +1,27 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
+function SignOut() {
+  let navigate = useNavigate();
+
+  const handleSignOut = () => {
+    // Clear user token and other relevant details from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    // Navigate the user back to the homepage or sign-in page
+    navigate("/");
+  };
+
+  return (
+    <div className="flex justify-center items-center">
+      <button
+        onClick={handleSignOut}
+        className="btn btn-error px-6 py-2 bg-red-500 rounded hover:bg-red-600 transition duration-200 ease-in-out text-white"
+      >
+        Sign Out
+      </button>
+    </div>
+  );
+}
+
+export default SignOut;

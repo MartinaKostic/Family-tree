@@ -2,7 +2,6 @@ export const transformData = (records, rootNode) => {
   const nodes = new Map();
   const spouseLinks = [];
 
-  // console.log(records);
   records.forEach((record) => {
     const { person, children, spouses } = record;
     if (!person || person.id === undefined || person.id === null) {

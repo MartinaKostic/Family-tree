@@ -1,4 +1,3 @@
-// TreeVisualization.js
 import React, { useRef, useEffect } from "react";
 import { select } from "d3-selection";
 import { hierarchy, tree, linkHorizontal, zoom, pointer } from "d3";
@@ -8,11 +7,11 @@ const TreeVisualization = ({
   onAddSpouse,
   onAddChild,
   onPersonClick,
+  onAddParent,
 }) => {
   const svgRef = useRef();
   useEffect(() => {
     if (!data || !data.root) return;
-
     function updateDimensions() {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -25,7 +24,8 @@ const TreeVisualization = ({
 
       const g = svg.append("g").attr("transform", "translate(50,50)");
       const treeLayout = tree().size([width - 100, height - 100]);
-      //we are making hierarchy here. So from nodes children array we take id and find the same node in the nodes (cause id is not enough)
+      //hierarchy needed- So from nodes children array we take id and find the same node in the nodes (cause id is not enough)
+
       const root = hierarchy(data.root, (d) =>
         d.children.map((childId) =>
           data.nodes.find((node) => node.id === childId)
@@ -310,6 +310,8 @@ const TreeVisualization = ({
 
         node
           .on("mouseenter", function (event) {
+            const nodeSelection = select(this); // This selects the current node
+            const boundData = nodeSelection.datum(); // This gets the data bound to the node
             const [x, y] = pointer(event, this);
             let action = "";
             let iconX = 0;
@@ -323,6 +325,10 @@ const TreeVisualization = ({
               action = "Add Spouse";
               iconX = nodeWidth;
               iconY = nodeHeight / 2 - 10;
+            } else if (y < nodeHeight / 4 && boundData.data.isRoot) {
+              action = "Add Parent";
+              iconX = nodeWidth / 2 - 10;
+              iconY = -10;
             } else if (y < nodeHeight) {
               action = "Add Child";
               iconX = nodeWidth / 2 - 10;
@@ -361,6 +367,11 @@ const TreeVisualization = ({
                   event.stopPropagation();
                   onAddChild(d);
                 });
+              } else if (action == "Add Parent") {
+                actionGroup.on("click", function (event) {
+                  event.stopPropagation();
+                  onAddParent(d);
+                });
               }
             }
           })
@@ -376,7 +387,7 @@ const TreeVisualization = ({
       return () => window.removeEventListener("resize", updateDimensions);
     }
     updateDimensions();
-  }, [data, onAddSpouse, onAddChild]);
+  }, [data, onAddSpouse, onAddChild, onAddParent]);
 
   return <svg ref={svgRef} />;
 };

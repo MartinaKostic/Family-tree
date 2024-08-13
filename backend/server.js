@@ -8,7 +8,8 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-
+//uploads ->staticni folder=>doda endpoint svemu u folderu-->mozes onda na frontendu koristit
+app.use("/uploads", express.static("uploads"));
 app.use("/api", familyRoutes);
 
 const startServer = async () => {

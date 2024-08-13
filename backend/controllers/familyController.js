@@ -1,6 +1,7 @@
 import { getSession } from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import fs from "fs";
 
 export const createRootNode = async (req, res) => {
   const session = getSession();
@@ -33,6 +34,9 @@ export const createRootNode = async (req, res) => {
   }
 };
 
+export const getUpdateRootQuery = () => {
+  return query;
+};
 export const updatePersonInDatabase = async (personId, updateData) => {
   const session = getSession();
   // Building the SET part of the query dynamically based on the properties provided
@@ -110,15 +114,35 @@ export const getFamilyTree = async (_req, res) => {
 
 export const addPerson = async (req, res) => {
   const session = getSession();
-  console.log("data", req.body);
-  const { firstname, birthdate, id, type } = req.body;
+  const {
+    firstname,
+    birthdate,
+    id,
+    deathdate,
+    profession,
+    description,
+    type,
+    userId,
+  } = req.body;
 
+  console.log("file", req.file);
+  let newFileName = req.file.originalname;
   let createPersonQuery = `
-    CREATE (c:Person {name: $firstname, birthDate: $birthdate})
+    CREATE (c:Person {name: $firstname, birthDate: $birthdate, deathDate: $deathdate, description: $description, profession: $profession, isRoot: false, imageUrl: $newFileName})
     WITH c
   `;
 
-  let parameters = { firstname, birthdate, id };
+  let parameters = {
+    firstname,
+    birthdate,
+    id: +id,
+    deathdate,
+    description,
+    profession,
+    newFileName,
+  };
+
+  console.log(parameters);
 
   if (type === "spouse") {
     createPersonQuery += `
@@ -132,10 +156,36 @@ export const addPerson = async (req, res) => {
       WHERE id(p) = $id
       MERGE (p)-[:PARENT_OF]->(c)
     `;
+  } else if (type === "parent") {
+    createPersonQuery += `
+      MATCH (p:Person)
+      WHERE id(p) = $id
+      MERGE (c)-[:PARENT_OF]->(p)
+      RETURN id(c) AS newRootId
+    `;
   }
-
   try {
-    await session.run(createPersonQuery, parameters);
+    const result = await session.run(createPersonQuery, parameters);
+
+    if (type === "parent") {
+      const currentRootId = id;
+      const newRootId = result.records[0].get("newRootId").low;
+      const user = +userId;
+      const parameters = { currentRootId, newRootId, user };
+      console.log(parameters);
+
+      const updateRootQuery = `
+      MATCH (u:User WHERE id(u) = $user)-[r:HAS_ROOT]->(currentRoot:Person WHERE id(currentRoot) = $currentRootId)
+      DELETE r
+      SET currentRoot.isRoot = false
+      WITH u
+      MATCH (newRoot:Person WHERE id(newRoot) = $newRootId)
+      MERGE (u)-[:HAS_ROOT]->(newRoot)
+      SET newRoot.isRoot = true
+      RETURN newRoot`;
+
+      await session.run(updateRootQuery, parameters);
+    }
     const records = await fetchFamilyTree(session); // Fetch the updated family tree
     res.status(200).json(records);
   } catch (error) {
@@ -335,7 +385,7 @@ export const signIn = async (req, res) => {
       { expiresIn: "1h" } // Token expires in 1 hour
     );
 
-    res.json({
+    res.status(200).json({
       message: "Successfully signed in",
       token,
       user: {

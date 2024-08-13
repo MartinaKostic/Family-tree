@@ -23,10 +23,9 @@ function SignUp() {
 
     try {
       const response = await signUp(formData);
-      console.log("Sign Up Response:", response);
       localStorage.setItem("token", response.token); // Store the token
       localStorage.setItem("userId", response.user.id.low);
-      navigate("/add-root-node"); // Redirect to root node form page
+      navigate("/add-root-node"); // Redirect to root node page
     } catch (err) {
       setError(err.message || "Failed to sign up");
     }

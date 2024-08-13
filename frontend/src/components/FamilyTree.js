@@ -6,6 +6,7 @@ import {
   fetchFamilyTree,
   deletePersonByName,
   editPerson,
+  addParentAsRoot,
 } from "../api/ApiCalls.js";
 
 const FamilyTree = () => {
@@ -77,6 +78,7 @@ const FamilyTree = () => {
         onAddSpouse={(details) => openForm("spouse", details)}
         onAddChild={(details) => openForm("child", details)}
         onPersonClick={handlePersonClick}
+        onAddParent={(details) => openForm("parent", details)}
       />
       {isModalOpen && (
         <PersonDetailsModal

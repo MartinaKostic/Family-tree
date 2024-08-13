@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { addPerson } from "../../api/ApiCalls";
 
 const FormModal = ({ show, onClose, title, details, getNewData }) => {
   const [newPerson, setNewPerson] = useState({
     firstname: "",
     birthdate: "",
+    deathdate: "",
+    description: "",
+    profession: "",
   });
+  const [file, setFile] = useState([]);
 
   const handleChange = (event) => {
-    console.log(details);
     const { name, value } = event.target;
     setNewPerson((prevState) => ({
       ...prevState,
@@ -16,20 +19,49 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    if (e.target.files[0]) {
+      let selected = e.target.files[0];
+      setFile(selected);
+    }
+  };
+
   const handleSubmit = async (event) => {
+    const userId = localStorage.getItem("userId");
     event.preventDefault();
+
     try {
       const data = {
         ...newPerson,
         id: details.data.id,
         type: title,
+        userId: userId,
       };
-      console.log(data);
-      const res = await addPerson(data);
-      console.log("RESSS", res);
+
+      let formData = new FormData();
+
+      for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+          formData.append(key, data[key]);
+        }
+      }
+
+      formData.append("file", file);
+
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      const res = await addPerson(formData);
       getNewData();
       onClose();
-      setNewPerson({ firstname: "", birthdate: "" });
+      setNewPerson({
+        firstname: "",
+        birthdate: "",
+        deathdate: "",
+        description: "",
+        profession: "",
+      });
     } catch (error) {
       console.log("ERROR", error);
     }
@@ -57,8 +89,38 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
               onChange={handleChange}
               required
             />
+            <label>
+              Birth date:
+              <input
+                type="date"
+                name="birthdate"
+                onChange={handleChange}
+              />{" "}
+            </label>
+            <label>
+              Death date:
+              <input type="date" name="deathdate" onChange={handleChange} />
+            </label>
+            <textarea
+              name="description"
+              onChange={handleChange}
+              placeholder="Enter description here..."
+              rows="4"
+              cols="50"
+            />
+            <input
+              type="text"
+              name="profession"
+              placeholder="profession"
+              onChange={handleChange}
+            />
+            <input
+              type="file"
+              onChange={handleImageChange}
+              name="pictures"
+              id="file"
+            />
 
-            <input type="date" name="birthdate" onChange={handleChange} />
             <div>
               <button type="submit">Submit</button>
               <button type="button" onClick={onClose}>
