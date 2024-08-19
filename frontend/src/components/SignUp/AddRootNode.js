@@ -3,26 +3,46 @@ import { useNavigate } from "react-router-dom";
 import { addRootNode } from "../../api/ApiCalls";
 
 function AddRootNode() {
-  const [formData, setFormData] = useState({
+  const [data, setData] = useState({
     name: "",
     birthDate: "",
     deathDate: "",
-    job: "",
+    profession: "",
     description: "",
   });
+  const [file, setFile] = useState(null);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setData({ ...data, [e.target.name]: e.target.value });
+  };
+  const handleFileChange = (e) => {
+    console.log(e.target.files[0]);
+    if (e.target.files[0]) {
+      let selected = e.target.files[0];
+      setFile(selected);
+    }
   };
 
   const handleSubmit = async (e) => {
+    const userId = localStorage.getItem("userId");
     e.preventDefault();
     try {
-      const userId = localStorage.getItem("userId");
-      const completeFormData = { ...formData, userId };
-      await addRootNode(completeFormData);
-      navigate("/familytree"); // Adjust the navigation target as needed
+      const updatedData = {
+        ...data,
+        userId: userId,
+      };
+      let formData = new FormData();
+      for (const key in updatedData) {
+        if (updatedData.hasOwnProperty(key)) {
+          formData.append(key, updatedData[key]);
+        }
+      }
+      formData.append("file", file);
+      console.log("FFFFFFF", file);
+      await addRootNode(formData);
+      navigate("/familytree");
     } catch (error) {
       console.error("Failed to add root node:", error);
     }
@@ -38,7 +58,7 @@ function AddRootNode() {
           <input
             type="text"
             name="name"
-            value={formData.name}
+            value={data.name}
             onChange={handleChange}
             placeholder="Name"
             required
@@ -46,43 +66,62 @@ function AddRootNode() {
           />
         </div>
         <div className="mb-4">
-          <input
-            type="date"
-            name="birthDate"
-            value={formData.birthDate}
-            onChange={handleChange}
-            required
-            className="input input-bordered w-full"
-          />
+          <label>
+            Birth date:
+            <input
+              type="date"
+              name="birthDate"
+              value={data.birthDate}
+              onChange={handleChange}
+              required
+              className="input input-bordered w-full"
+            />
+          </label>
         </div>
         <div className="mb-4">
-          <input
-            type="date"
-            name="deathDate"
-            value={formData.deathDate}
-            onChange={handleChange}
-            className="input input-bordered w-full"
-          />
+          <label>
+            Death date:
+            <input
+              type="date"
+              name="deathDate"
+              value={data.deathDate}
+              onChange={handleChange}
+              className="input input-bordered w-full"
+            />
+          </label>
         </div>
         <div className="mb-4">
-          <input
-            type="text"
-            name="job"
-            value={formData.job}
-            onChange={handleChange}
-            placeholder="Job"
-            className="input input-bordered w-full"
-          />
+          <label>
+            {" "}
+            Profession:
+            <input
+              type="text"
+              name="profession"
+              value={data.profession}
+              onChange={handleChange}
+              placeholder="Profession"
+              className="input input-bordered w-full"
+            />
+          </label>
         </div>
         <div className="mb-4">
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Description"
-            className="textarea textarea-bordered w-full"
-          />
+          <label>
+            Description:
+            <textarea
+              name="description"
+              value={data.description}
+              onChange={handleChange}
+              placeholder="Description"
+              className="textarea textarea-bordered w-full"
+            />
+          </label>
         </div>
+        <input
+          type="file"
+          name="file"
+          onChange={handleFileChange}
+          className="mb-4"
+        />
         <button
           type="submit"
           className="btn btn-primary px-8 rounded bg-blue-500 hover:bg-blue-600 text-white"

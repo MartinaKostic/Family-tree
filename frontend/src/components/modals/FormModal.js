@@ -9,26 +9,26 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     description: "",
     profession: "",
   });
-  const [file, setFile] = useState([]);
+  const [file, setFile] = useState(null);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setNewPerson((prevState) => ({
       ...prevState,
       [name]: value,
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleFileChange = (e) => {
     if (e.target.files[0]) {
       let selected = e.target.files[0];
       setFile(selected);
     }
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (e) => {
     const userId = localStorage.getItem("userId");
-    event.preventDefault();
+    e.preventDefault();
 
     try {
       const data = {
@@ -48,11 +48,8 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
 
       formData.append("file", file);
 
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
+      await addPerson(formData);
 
-      const res = await addPerson(formData);
       getNewData();
       onClose();
       setNewPerson({
@@ -62,6 +59,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
         description: "",
         profession: "",
       });
+      setFile(null);
     } catch (error) {
       console.log("ERROR", error);
     }
@@ -116,7 +114,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
             />
             <input
               type="file"
-              onChange={handleImageChange}
+              onChange={handleFileChange}
               name="pictures"
               id="file"
             />

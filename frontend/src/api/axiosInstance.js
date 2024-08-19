@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "/api",
+  baseURL: "http://localhost:5000/api",
 });
 
 // This function will be called before every request to ensure the token is updated

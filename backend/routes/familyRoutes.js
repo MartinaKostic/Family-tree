@@ -2,7 +2,7 @@ import express from "express";
 import {
   getFamilyTree,
   addPerson,
-  deletePersonByName,
+  deletePerson,
   editPersonDetails,
   signUp,
   signIn,
@@ -24,12 +24,16 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.post("/create-root-node", createRootNode);
+router.post("/create-root-node", upload.single("file"), createRootNode);
 router.get("/family-tree", getFamilyTree);
 router.get("/get-root-node", getRootNode);
 router.post("/add-person", upload.single("file"), addPerson);
-router.delete("/delete-person-by-name/:name", deletePersonByName);
-router.put("/update-person/:personId", editPersonDetails);
+router.delete("/delete-person/:id", deletePerson);
+router.put(
+  "/update-person/:personId",
+  upload.single("imageUrl"),
+  editPersonDetails
+);
 router.post("/signup", signUp);
 router.post("/signin", signIn);
 

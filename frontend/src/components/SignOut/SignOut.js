@@ -16,7 +16,7 @@ function SignOut() {
     <div className="flex justify-center items-center">
       <button
         onClick={handleSignOut}
-        className="btn btn-error px-6 py-2 bg-red-500 rounded hover:bg-red-600 transition duration-200 ease-in-out text-white"
+        className="btn btn-error px-4 py-1 bg-blue-400 rounded hover:bg-blue-600 transition duration-200 ease-in-out text-white"
       >
         Sign Out
       </button>

@@ -12,6 +12,7 @@ const TreeVisualization = ({
   const svgRef = useRef();
   useEffect(() => {
     if (!data || !data.root) return;
+
     function updateDimensions() {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -36,8 +37,8 @@ const TreeVisualization = ({
       // Initialize zoom behavior
       const zoomEffect = zoom()
         .scaleExtent([0.5, 3]) // Limit zoom scale
-        .on("zoom", (event) => {
-          g.attr("transform", event.transform); // Apply new transform to the g element
+        .on("zoom", (e) => {
+          g.attr("transform", e.transform); // Apply new transform to the g element
         });
 
       svg.call(zoomEffect); // Apply zoom behavior to the SVG element
@@ -75,7 +76,7 @@ const TreeVisualization = ({
 
           // If the source has a spouse, adjust the starting x coordinate
           if (d.source.data.spouses.length > 0) {
-            const spouseId = d.source.data.spouses[0]; // Assuming only one spouse
+            const spouseId = d.source.data.spouses[0];
             const spouse = data.nodes.find((node) => node.id === spouseId);
             if (spouse) {
               const spouseX = spouse.x + 50; // Assuming the node width is 100
@@ -114,9 +115,9 @@ const TreeVisualization = ({
                 target: { x: sourceNode.y, y: sourceNode.x + offsetX },
               })
             )
-            .attr("stroke", "red")
+            .attr("stroke", "#ccc")
+            .attr("stroke-width", 2)
             .attr("fill", "none");
-
           // Group for spouse node
           const spouseNodeGroup = g
             .append("g")
@@ -125,7 +126,7 @@ const TreeVisualization = ({
               `translate(${sourceNode.x + offsetX},${sourceNode.y})`
             ) //za modal details
             .on("click", () => {
-              console.log(targetNode);
+              // console.log(targetNode);
               onPersonClick(targetNode);
             })
             .on("mouseover", function () {
@@ -176,7 +177,7 @@ const TreeVisualization = ({
             .attr("height", 30)
             .attr("rx", 10)
             .attr("ry", 10)
-            .attr("fill", "lightpink");
+            .attr("fill", "#b2f2bb");
 
           // Append text
           spouseNodeGroup
@@ -229,7 +230,7 @@ const TreeVisualization = ({
             .attr("x", 20)
             .attr("y", -65);
         })
-        .on("mouseout", function (event, d) {
+        .on("mouseout", function (e, d) {
           select(this)
             .select("rect")
             .transition()
@@ -251,17 +252,17 @@ const TreeVisualization = ({
       // Append images
       nodes
         .append("image")
-        .attr("xlink:href", (d) => d.data.imageUrl) // Ensure each node data has an imageUrl
+        .attr("xlink:href", (d) => d.data.imageUrl)
         .attr("width", 50) // Set the image size
         .attr("height", 50)
-        .attr("x", 25) // Adjust x to center the image
-        .attr("y", -50); // Adjust y to place above the text
+        .attr("x", 25) // center the image
+        .attr("y", -50); // place above the text
       nodes
         .append("rect")
         .attr("width", 100)
         .attr("height", 30)
-        .attr("rx", 10) // Adjust rx for horizontal corner radius
-        .attr("ry", 10) // Adjust ry for vertical corner radius
+        .attr("rx", 10) // horizontal corner radius
+        .attr("ry", 10) // vertical corner radius
         .attr("fill", "lightblue");
 
       nodes
@@ -309,10 +310,10 @@ const TreeVisualization = ({
           .attr("visibility", "hidden"); // Start hidden
 
         node
-          .on("mouseenter", function (event) {
+          .on("mouseenter", function (e) {
             const nodeSelection = select(this); // This selects the current node
             const boundData = nodeSelection.datum(); // This gets the data bound to the node
-            const [x, y] = pointer(event, this);
+            const [x, y] = pointer(e, this);
             let action = "";
             let iconX = 0;
             let iconY = 0;
@@ -358,18 +359,18 @@ const TreeVisualization = ({
               actionGroup.style("visibility", "visible");
 
               if (action == "Add Spouse") {
-                actionGroup.on("click", function (event) {
-                  event.stopPropagation();
+                actionGroup.on("click", function (e) {
+                  e.stopPropagation();
                   onAddSpouse(d);
                 });
               } else if (action == "Add Child") {
-                actionGroup.on("click", function (event) {
-                  event.stopPropagation();
+                actionGroup.on("click", function (e) {
+                  e.stopPropagation();
                   onAddChild(d);
                 });
               } else if (action == "Add Parent") {
-                actionGroup.on("click", function (event) {
-                  event.stopPropagation();
+                actionGroup.on("click", function (e) {
+                  e.stopPropagation();
                   onAddParent(d);
                 });
               }

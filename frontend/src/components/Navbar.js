@@ -7,14 +7,12 @@ function Navbar() {
     <nav className="bg-gray-100 shadow-lg w-full">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          {/* Logo or Home link */}
           <Link
             to="/"
             className="text-gray-700 hover:text-gray-900 text-lg font-semibold"
           >
             Family Tree App
           </Link>
-          {/* Navigation Links */}
           <div className="flex items-center space-x-4">
             <Link to="/" className="text-gray-700 hover:text-gray-900">
               Home

@@ -18,9 +18,7 @@ function Home() {
             : "Already have an account? Sign In"}
         </button>
       </div>
-      <div className="mt-8 w-full max-w-md ">
-        {isSigningIn ? <SignIn /> : <SignUp />}
-      </div>
+      <div className="mt-8 w-full">{isSigningIn ? <SignIn /> : <SignUp />}</div>
     </div>
   );
 }

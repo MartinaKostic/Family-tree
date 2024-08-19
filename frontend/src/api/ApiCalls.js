@@ -27,20 +27,23 @@ export const addPerson = async (data) => {
   return response;
 };
 
-export const deletePersonByName = async (name) => {
-  const response = await axiosInstance.delete(
-    `/api/delete-person-by-name/${name}`
-  );
-  return response.status === 200;
+export const deletePerson = async (id) => {
+  try {
+    const response = await axiosInstance.delete(`/delete-person/${id}`);
+    return response.status === 200;
+  } catch (error) {
+    console.error("Failed to delete person:", error);
+    throw error;
+  }
 };
 
 export const editPerson = async (personId, updateData) => {
   try {
     const response = await axiosInstance.put(
-      `/api/update-person/${personId}`,
+      `/update-person/${personId}`,
       updateData
     );
-    return response.data; // Assuming the response includes the updated data
+    return response.data; //response includes the updated data
   } catch (error) {
     console.error("Error updating person:", error);
     throw error; // Re-throw to handle it in the calling component
@@ -72,7 +75,6 @@ export const addRootNode = async (rootNodeDetails) => {
       rootNodeDetails,
       {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }

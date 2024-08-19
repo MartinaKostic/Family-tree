@@ -5,10 +5,16 @@ import fs from "fs";
 
 export const createRootNode = async (req, res) => {
   const session = getSession();
-  const { userId, name, birthDate, deathDate, job, description } = req.body;
-  console.log("ui", userId);
+  console.log("body", req.body);
+  const { userId, name, birthDate, deathDate, profession, description } =
+    req.body;
+  console.log("rffghjk", req.file);
+  let newFileName = req.file?.originalname
+    ? `http://localhost:5000/uploads/${req.file.originalname}`
+    : null;
+
   const query = `
-    CREATE (n:Person {name: $name, birthDate: $birthDate, deathDate: $deathDate, job: $job, description: $description, isRoot: true})
+    CREATE (n:Person {name: $name, birthDate: $birthDate, deathDate: $deathDate, profession: $profession, description: $description,  imageUrl: $newFileName, isRoot: true})
     WITH n
     MATCH (u:User)
     WHERE ID(u) = toInteger($userId)
@@ -22,8 +28,9 @@ export const createRootNode = async (req, res) => {
       name,
       birthDate,
       deathDate,
-      job,
+      profession,
       description,
+      newFileName,
     });
     res.status(201).send("Root node created successfully");
   } catch (error) {
@@ -36,38 +43,6 @@ export const createRootNode = async (req, res) => {
 
 export const getUpdateRootQuery = () => {
   return query;
-};
-export const updatePersonInDatabase = async (personId, updateData) => {
-  const session = getSession();
-  // Building the SET part of the query dynamically based on the properties provided
-  const sets = Object.keys(updateData)
-    .map((key) => `p.${key} = $${key}`)
-    .join(", ");
-
-  const query = `
-    MATCH (p:Person)
-    WHERE id(p) = $personId
-    SET ${sets}
-    RETURN p `;
-
-  try {
-    const result = await session.run(query, { personId, ...updateData });
-    console.log(result.records);
-    if (result.records.length > 0) {
-      // Assuming the first record is the person updated
-      return {
-        ...result.records[0].get("p").properties,
-        id: result.records[0].get("p").identity.toInt(), // or .toNumber()
-      };
-    } else {
-      // throw new Error("No person found with the given ID.");
-    }
-  } catch (error) {
-    console.error("Error updating person in database:", error);
-    throw error; // Re-throw the error for further handling
-  } finally {
-    await session.close();
-  }
 };
 
 const fetchFamilyTree = async (session) => {
@@ -125,8 +100,10 @@ export const addPerson = async (req, res) => {
     userId,
   } = req.body;
 
-  console.log("file", req.file);
-  let newFileName = req.file.originalname;
+  let newFileName = req.file?.originalname
+    ? `http://localhost:5000/uploads/${req.file.originalname}`
+    : null;
+
   let createPersonQuery = `
     CREATE (c:Person {name: $firstname, birthDate: $birthdate, deathDate: $deathdate, description: $description, profession: $profession, isRoot: false, imageUrl: $newFileName})
     WITH c
@@ -141,8 +118,6 @@ export const addPerson = async (req, res) => {
     profession,
     newFileName,
   };
-
-  console.log(parameters);
 
   if (type === "spouse") {
     createPersonQuery += `
@@ -195,31 +170,56 @@ export const addPerson = async (req, res) => {
   }
 };
 
-export const deletePersonByName = async (req, res) => {
-  const personName = req.params.name; // Get the name from request parameters
+export const deletePerson = async (req, res) => {
+  const personId = req.params.id; // Get the name from request parameters
   const session = getSession();
 
   try {
     const result = await session.run(
-      `MATCH (p:Person {name: $personName})
-      DETACH DELETE p
-      RETURN COUNT(p) as count
-    `,
-      { personName }
+      `MATCH (p:Person) WHERE id(p) = toInteger($personId) DETACH DELETE p RETURN COUNT(p) AS count`,
+      { personId }
     );
 
     const count = result.records[0].get("count").toInt();
-
     if (count === 0) {
-      res.status(404).json({ message: "No person found with that name" });
+      res.status(404).json({ message: "No person found with that ID" });
     } else {
-      res.status(200).json({ message: "Person(s) deleted successfully" });
+      res.status(200).json({ message: "Person deleted successfully" });
     }
   } catch (error) {
-    console.error("Error deleting person by name:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to delete person: " + error.message });
+    console.error("Error deleting person:", error);
+    res.status(500).json({ error: "Failed to delete person" });
+  } finally {
+    session.close();
+  }
+};
+
+export const updatePersonInDatabase = async (personId, updateData) => {
+  const session = getSession();
+  const sets = Object.keys(updateData)
+    .map((key) => `p.${key} = $${key}`)
+    .join(", ");
+
+  const query = `
+    MATCH (p:Person)
+    WHERE id(p) = $personId
+    SET ${sets}
+    RETURN p `;
+
+  try {
+    const result = await session.run(query, { personId, ...updateData });
+    if (result.records.length > 0) {
+      // the first record is the person updated
+      return {
+        ...result.records[0].get("p").properties,
+        id: result.records[0].get("p").identity.toInt(),
+      };
+    } else {
+      // throw new Error("No person found with the given ID.");
+    }
+  } catch (error) {
+    console.error("Error updating person in database:", error);
+    throw error; // Re-throw the error for further handling
   } finally {
     await session.close();
   }
@@ -227,11 +227,16 @@ export const deletePersonByName = async (req, res) => {
 
 export const editPersonDetails = async (req, res) => {
   const { personId } = req.params;
-  const updateData = req.body;
-  console.log(personId, updateData);
+  let updateData = { ...req.body };
+  if (req.file?.originalname) {
+    const imageUrl = `http://localhost:5000/uploads/${req.file.originalname}`;
+    updateData = { ...updateData, imageUrl: imageUrl };
+  }
+
+  console.log("updd ata", updateData);
+
   try {
     const updatedPerson = await updatePersonInDatabase(+personId, updateData);
-    console.log("UPDATED PERSONA", updatedPerson);
     res.json(updatedPerson);
   } catch (error) {
     console.error("Failed to update person:", error);
@@ -251,10 +256,6 @@ export const getRootNode = async (req, res) => {
         `,
       { userId } // Pass userId as a parameter to the query
     );
-
-    /*  const result = await session.run(
-      "MATCH (n:Person {isRoot: true}) RETURN n LIMIT 1"
-    ); */
 
     if (result.records.length > 0) {
       const rootNode = result.records[0].get("root");

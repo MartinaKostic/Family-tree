@@ -83,10 +83,11 @@ function SignUp() {
         </div>
         <button
           type="submit"
-          className="btn btn-primary px-8 bg-blue-400 rounded hover:bg-blue-600 transition duration-200 ease-in-out text-white"
+          className="btn btn-primary px-4 py-1 bg-blue-400 rounded hover:bg-blue-600 transition duration-200 ease-in-out text-white"
         >
           Sign Up
         </button>
+
         {error && <p className="text-red-500 text-center mt-4">{error}</p>}
       </form>
     </div>
