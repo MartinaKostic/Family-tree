@@ -291,7 +291,7 @@ export const signUp = async (req, res) => {
       name: name,
       username: username,
       email: email,
-      hashedPassword: hashedPassword, // Ensure this key matches the one used in the query
+      hashedPassword: hashedPassword,
     };
 
     const query = `
@@ -330,20 +330,13 @@ export const signUp = async (req, res) => {
       },
     });
   } catch (error) {
-    if (
-      error.message.includes("ConstraintValidationFailed") ||
-      error.message.includes("AlreadyExists")
-    ) {
-      res.status(409).json({
-        message: "Username or email already exists",
-        error: error.message,
-      });
+    if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed") {
+      res
+        .status(409)
+        .send({ error: "User with the provided username already exists" });
     } else {
-      console.error("Signup error:", error);
-      res.status(500).json({
-        message: "Failed to create user",
-        error: error.message,
-      });
+      console.log(error);
+      res.status(500).send({ error: "Failed to create user" });
     }
   } finally {
     await session.close();

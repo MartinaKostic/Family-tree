@@ -10,7 +10,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/familytree" element={<FamilyTree />} />
+        <Route path="/family-tree" element={<FamilyTree />} />
         <Route path="/add-root-node" element={<AddRootNode />} />
       </Routes>
     </Router>

@@ -23,7 +23,7 @@ function SignIn() {
       const response = await signIn(formData);
       localStorage.setItem("token", response.token); // Store the token
       localStorage.setItem("userId", response.user.id.low);
-      navigate("/familytree");
+      navigate("/family-tree");
     } catch (err) {
       setError(err.message || "Failed to sign in");
     }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import SignOut from "./SignOut/SignOut";
 
 function Navbar() {
@@ -14,8 +14,11 @@ function Navbar() {
             Family Tree App
           </Link>
           <div className="flex items-center space-x-4">
-            <Link to="/" className="text-gray-700 hover:text-gray-900">
-              Home
+            <Link
+              to="/family-tree"
+              className="text-gray-700 hover:text-gray-900"
+            >
+              My Family Tree
             </Link>
             <Link to="/about" className="text-gray-700 hover:text-gray-900">
               About Us

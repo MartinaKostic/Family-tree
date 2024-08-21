@@ -12,22 +12,35 @@ function SignUp() {
   const [error, setError] = useState("");
   let navigate = useNavigate();
 
+  // Fixed validation function
+  const validatePassword = (password) => {
+    return password.length >= 8 && /\d/.test(password);
+  };
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    if (!validatePassword(formData.password)) {
+      setError(
+        "Password must be at least 8 characters long and include a number"
+      );
+      return; // Exit the function to prevent further execution
+    }
 
     try {
       const response = await signUp(formData);
       localStorage.setItem("token", response.token); // Store the token
-      localStorage.setItem("userId", response.user.id.low);
+      localStorage.setItem("userId", response.user.id);
       navigate("/add-root-node"); // Redirect to root node page
     } catch (err) {
-      setError(err.message || "Failed to sign up");
+      setError(err.error || "Failed to sign up");
     }
   };
 

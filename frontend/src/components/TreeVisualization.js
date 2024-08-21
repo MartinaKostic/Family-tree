@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { select } from "d3-selection";
 import { hierarchy, tree, linkHorizontal, zoom, pointer } from "d3";
+import { timeFormat } from "d3-time-format";
 
 const TreeVisualization = ({
   data,
@@ -10,6 +11,8 @@ const TreeVisualization = ({
   onAddParent,
 }) => {
   const svgRef = useRef();
+  const formatDate = timeFormat("%d.%m.%Y"); // e.g., "Jan 01, 2020"
+
   useEffect(() => {
     if (!data || !data.root) return;
 
@@ -133,6 +136,7 @@ const TreeVisualization = ({
               // Handle hover to expand both rectangle and image
               select(this)
                 .select("rect")
+                .style("cursor", "pointer")
                 .transition()
                 .duration(100)
                 .attr("width", 120)
@@ -142,6 +146,7 @@ const TreeVisualization = ({
 
               select(this)
                 .select("image")
+                .style("cursor", "pointer")
                 .transition()
                 .duration(100)
                 .attr("width", 60)
@@ -182,6 +187,7 @@ const TreeVisualization = ({
           // Append text
           spouseNodeGroup
             .append("text")
+            .style("cursor", "pointer")
             .attr("x", 50)
             .attr("y", 20)
             .attr("text-anchor", "middle")
@@ -214,6 +220,7 @@ const TreeVisualization = ({
           //ovi mouseover i mouse out je da naraste node na hover!
           select(this)
             .select("rect")
+            .style("cursor", "pointer")
             .transition()
             .duration(100)
             .attr("width", 120) // Increase width of node
@@ -223,6 +230,7 @@ const TreeVisualization = ({
 
           select(this)
             .select("image")
+            .style("cursor", "pointer")
             .transition()
             .duration(100)
             .attr("width", 60)
@@ -267,10 +275,26 @@ const TreeVisualization = ({
 
       nodes
         .append("text")
+        .style("cursor", "pointer")
         .attr("dy", "1.3em")
         .attr("x", 50)
         .attr("text-anchor", "middle")
         .text((d) => d.data.name);
+
+      nodes
+        .append("text")
+        .attr("x", 50) // Center text horizontally
+        .attr("y", 50) // Position for the dates
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px") // Smaller font size for dates
+        .text((d) =>
+          d.data.birthDate
+            ? formatDate(new Date(d.data.birthDate)) +
+              (d.data.deathDate
+                ? ` - ${formatDate(new Date(d.data.deathDate))}`
+                : "")
+            : ""
+        ); // Display dates
 
       nodes.each(function (d) {
         const node = select(this);
@@ -286,6 +310,7 @@ const TreeVisualization = ({
         // Add the "+" icon to the group, initially not positioned
         const addActionIcon = actionGroup
           .append("image")
+          .style("cursor", "pointer")
           .attr("xlink:href", "/icons/add.png")
           .attr("width", 18) // Set the width of the image
           .attr("height", 18) // Set the height of the image
@@ -330,7 +355,7 @@ const TreeVisualization = ({
               action = "Add Parent";
               iconX = nodeWidth / 2 - 10;
               iconY = -10;
-            } else if (y < nodeHeight) {
+            } else if (y < nodeHeight + 20 && y > nodeHeight - 20) {
               action = "Add Child";
               iconX = nodeWidth / 2 - 10;
               iconY = nodeHeight - 10;

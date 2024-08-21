@@ -42,7 +42,7 @@ function AddRootNode() {
       formData.append("file", file);
       console.log("FFFFFFF", file);
       await addRootNode(formData);
-      navigate("/familytree");
+      navigate("/family-tree");
     } catch (error) {
       console.error("Failed to add root node:", error);
     }
