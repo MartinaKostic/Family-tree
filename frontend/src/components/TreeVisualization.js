@@ -11,7 +11,7 @@ const TreeVisualization = ({
   onAddParent,
 }) => {
   const svgRef = useRef();
-  const formatDate = timeFormat("%d.%m.%Y"); // e.g., "Jan 01, 2020"
+  const formatDate = timeFormat("%d.%m.%Y");
 
   useEffect(() => {
     if (!data || !data.root) return;
@@ -70,32 +70,11 @@ const TreeVisualization = ({
         .enter()
         .append("path")
         .attr("class", "link")
-        .attr("d", (d) => {
-          // Calculate the middle point between the source and its spouse if any
-          let sourceX = d.source.x + nodes.width; // Assuming the node width is 100
-          const sourceY = d.source.y;
-          const targetX = d.target.x + nodes.width;
-          const targetY = d.target.y;
 
-          // If the source has a spouse, adjust the starting x coordinate
-          if (d.source.data.spouses.length > 0) {
-            const spouseId = d.source.data.spouses[0];
-            const spouse = data.nodes.find((node) => node.id === spouseId);
-            if (spouse) {
-              const spouseX = spouse.x + 50; // Assuming the node width is 100
-              sourceX = (sourceX + spouseX) / 2; // Middle point between the two
-            }
-          }
-
-          // Path from the middle point between spouses to the target
-          return `M${sourceX},${sourceY}
-            V${(sourceY + targetY) / 2}
-            H${targetX}
-            V${targetY}`;
-        })
         .attr("fill", "none")
         .attr("stroke", "#ccc")
         .attr("stroke-width", 2);
+
       //adding the spouses
       data.spouseLinks.forEach((link) => {
         const sourceNode = root
@@ -104,7 +83,7 @@ const TreeVisualization = ({
         const targetNode = data.nodes.find((d) => d.id === link.target);
 
         if (sourceNode && targetNode) {
-          const offsetX = 150;
+          const offsetX = 200;
 
           // Draw the link
           g.append("path")
@@ -112,7 +91,7 @@ const TreeVisualization = ({
             .attr(
               "d",
               linkHorizontal()
-                .x((d) => d.y + 30)
+                .x((d) => d.y + 60)
                 .y((d) => d.x + 15)({
                 source: { x: sourceNode.y, y: sourceNode.x },
                 target: { x: sourceNode.y, y: sourceNode.x + offsetX },
@@ -129,7 +108,6 @@ const TreeVisualization = ({
               `translate(${sourceNode.x + offsetX},${sourceNode.y})`
             ) //za modal details
             .on("click", () => {
-              // console.log(targetNode);
               onPersonClick(targetNode);
             })
             .on("mouseover", function () {
@@ -193,14 +171,16 @@ const TreeVisualization = ({
             .attr("text-anchor", "middle")
             .text(targetNode.name);
 
-          // Append image
-          spouseNodeGroup
-            .append("image")
-            .attr("xlink:href", targetNode.imageUrl)
-            .attr("width", 50)
-            .attr("height", 50)
-            .attr("x", 25)
-            .attr("y", -50);
+          if (targetNode.imageUrl) {
+            // Append image
+            spouseNodeGroup
+              .append("image")
+              .attr("xlink:href", targetNode.imageUrl)
+              .attr("width", 50)
+              .attr("height", 50)
+              .attr("x", 25)
+              .attr("y", -50);
+          }
         }
       });
 
@@ -229,7 +209,7 @@ const TreeVisualization = ({
             .attr("y", -3); // Adjust y to center
 
           select(this)
-            .select("image")
+            .selectAll(".node-image")
             .style("cursor", "pointer")
             .transition()
             .duration(100)
@@ -238,7 +218,7 @@ const TreeVisualization = ({
             .attr("x", 20)
             .attr("y", -65);
         })
-        .on("mouseout", function (e, d) {
+        .on("mouseout", function () {
           select(this)
             .select("rect")
             .transition()
@@ -249,7 +229,7 @@ const TreeVisualization = ({
             .attr("y", 0);
 
           select(this)
-            .select("image")
+            .selectAll(".node-image")
             .transition()
             .duration(100)
             .attr("width", 50) // Return to original size
@@ -257,20 +237,28 @@ const TreeVisualization = ({
             .attr("x", 25)
             .attr("y", -50);
         });
+
       // Append images
-      nodes
-        .append("image")
-        .attr("xlink:href", (d) => d.data.imageUrl)
-        .attr("width", 50) // Set the image size
-        .attr("height", 50)
-        .attr("x", 25) // center the image
-        .attr("y", -50); // place above the text
+      //ako nema image da je ne appenda, ako ostavim gore kod mouse selct "image", onda uzme pluseve
+      nodes.each(function (d) {
+        console.log(d.data);
+        if (d.data.imageUrl) {
+          select(this)
+            .append("image")
+            .attr("xlink:href", d.data.imageUrl)
+            .attr("width", 50)
+            .attr("height", 50)
+            .attr("x", 25)
+            .attr("y", -50)
+            .attr("class", "node-image");
+        }
+      });
       nodes
         .append("rect")
         .attr("width", 100)
         .attr("height", 30)
-        .attr("rx", 10) // horizontal corner radius
-        .attr("ry", 10) // vertical corner radius
+        .attr("rx", 10)
+        .attr("ry", 10)
         .attr("fill", "lightblue");
 
       nodes
@@ -369,6 +357,7 @@ const TreeVisualization = ({
                 .text(action)
                 .attr("x", iconX)
                 .attr("y", iconY - 20)
+                .style("cursor", "pointer")
                 .attr("visibility", "visible");
 
               // Size and position the text bubble

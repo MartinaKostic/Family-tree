@@ -331,9 +331,13 @@ export const signUp = async (req, res) => {
     });
   } catch (error) {
     if (error.code === "Neo.ClientError.Schema.ConstraintValidationFailed") {
-      res
-        .status(409)
-        .send({ error: "User with the provided username already exists" });
+      if (error.message.includes("username")) {
+        res
+          .status(409)
+          .send({ error: "User with that username already exists" });
+      } else if (error.message.includes("email")) {
+        res.status(409).send({ error: "User with that e-mail already exists" });
+      }
     } else {
       console.log(error);
       res.status(500).send({ error: "Failed to create user" });
