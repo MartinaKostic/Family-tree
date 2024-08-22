@@ -41,10 +41,6 @@ export const createRootNode = async (req, res) => {
   }
 };
 
-export const getUpdateRootQuery = () => {
-  return query;
-};
-
 const fetchFamilyTree = async (session) => {
   const result = await session.run(`
   MATCH (p:Person)
@@ -139,17 +135,16 @@ export const addPerson = async (req, res) => {
       RETURN id(c) AS newRootId
     `;
   }
-  try {
-    const result = await session.run(createPersonQuery, parameters);
+  const result = await session.run(createPersonQuery, parameters);
+  if (type === "parent") {
+    console.log(result);
 
-    if (type === "parent") {
-      const currentRootId = id;
-      const newRootId = result.records[0].get("newRootId").low;
-      const user = +userId;
-      const parameters = { currentRootId, newRootId, user };
-      console.log(parameters);
-
-      const updateRootQuery = `
+    const currentRootId = +id;
+    const newRootId = result.records[0].get("newRootId").low;
+    const user = +userId;
+    const parameters2 = { currentRootId, newRootId, user };
+    console.log("qsasd", parameters2);
+    const updateRootQuery = `
       MATCH (u:User WHERE id(u) = $user)-[r:HAS_ROOT]->(currentRoot:Person WHERE id(currentRoot) = $currentRootId)
       DELETE r
       SET currentRoot.isRoot = false
@@ -159,15 +154,13 @@ export const addPerson = async (req, res) => {
       SET newRoot.isRoot = true
       RETURN newRoot`;
 
-      await session.run(updateRootQuery, parameters);
-    }
-    const records = await fetchFamilyTree(session); // Fetch the updated family tree
-    res.status(200).json(records);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  } finally {
-    await session.close();
+    const kaka = await session.run(updateRootQuery, parameters2);
+    console.log(kaka);
   }
+  const records = await fetchFamilyTree(session); // Fetch the updated family tree
+  await session.close();
+
+  res.status(200).json(records);
 };
 
 export const deletePerson = async (req, res) => {
@@ -359,7 +352,7 @@ export const signIn = async (req, res) => {
     const result = await session.run(query, { username });
 
     if (result.records.length === 0) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "Invalid credentials" });
       return;
     }
 
@@ -368,7 +361,7 @@ export const signIn = async (req, res) => {
 
     const passwordIsValid = await bcrypt.compare(password, hashedPassword);
     if (!passwordIsValid) {
-      res.status(401).json({ message: "Invalid password" });
+      res.status(401).json({ message: "Invalid credentials" });
       return;
     }
 

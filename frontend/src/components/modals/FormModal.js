@@ -50,6 +50,8 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
 
       await addPerson(formData);
 
+      console.log("aaaaaaaaaaaaaaaaaaa");
+
       getNewData();
       onClose();
       setNewPerson({

@@ -83,7 +83,7 @@ const TreeVisualization = ({
         const targetNode = data.nodes.find((d) => d.id === link.target);
 
         if (sourceNode && targetNode) {
-          const offsetX = 200;
+          const offsetX = 150;
 
           // Draw the link
           g.append("path")
@@ -241,7 +241,6 @@ const TreeVisualization = ({
       // Append images
       //ako nema image da je ne appenda, ako ostavim gore kod mouse selct "image", onda uzme pluseve
       nodes.each(function (d) {
-        console.log(d.data);
         if (d.data.imageUrl) {
           select(this)
             .append("image")
