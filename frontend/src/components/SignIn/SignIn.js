@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { signIn } from "../../api/ApiCalls";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../helpers/AuthContext";
 
 function SignIn() {
   const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ function SignIn() {
     password: "",
   });
   const [error, setError] = useState("");
+  const { setAuthStatus } = useContext(AuthContext);
   let navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -23,6 +25,7 @@ function SignIn() {
       const response = await signIn(formData);
       localStorage.setItem("token", response.token); // Store the token
       localStorage.setItem("userId", response.user.id.low);
+      setAuthStatus(true);
       navigate("/family-tree");
     } catch (err) {
       setError(err.message || "Failed to sign in");

@@ -84,50 +84,70 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
         </div>
         {isEditMode ? (
           <>
-            <label className="block">
-              Birthdate:
+            <label className="block text-sm font-medium text-gray-700">
+              Add a photo:
+            </label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+
+            <label className="block text-sm font-medium text-gray-700">
+              Birth date:
               <input
                 type="date"
                 name="birthDate"
                 value={data.birthDate}
                 onChange={handleInputChange}
-                className="input input-bordered w-full max-w-xs mt-1"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               />
             </label>
-            <label className="block">
-              Deathdate:
+            <label className="block text-sm font-medium text-gray-700">
+              Death date:
               <input
                 type="date"
                 name="deathDate"
                 value={data.deathDate}
                 onChange={handleInputChange}
-                className="input input-bordered w-full max-w-xs mt-1"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               />
             </label>
-            <label className="block">
-              Description:
-              <textarea
-                name="description"
-                value={data.description}
-                onChange={handleInputChange}
-                className="textarea textarea-bordered w-full mt-1"
-              />
-            </label>
-            <input type="file" onChange={handleFileChange} className="mb-4" />
-            <label className="block">
+            <label className="block text-sm font-medium text-gray-700">
               Profession:
               <input
                 type="text"
                 name="profession"
                 value={data.profession}
+                placeholder="Profession"
                 onChange={handleInputChange}
-                className="input input-bordered w-full max-w-xs mt-1"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               />
             </label>
-
-            <button onClick={handleSubmit} className="btn btn-primary mt-4">
-              Save
-            </button>
+            <label className="block text-sm font-medium text-gray-700">
+              Description:
+              <textarea
+                name="description"
+                value={data.description}
+                onChange={handleInputChange}
+                className="m-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </label>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="py-1 px-2 bg-green-400 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-opacity-75"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="py-1 px-2 bg-blue-400 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-75"
+              >
+                Save
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -142,12 +162,17 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
                 className="w-20 h-20 object-cover mt-2"
               />
             )}
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="py-1 px-2 bg-green-400 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-opacity-75"
+              >
+                Close
+              </button>
+            </div>
           </>
         )}
-
-        <button onClick={onClose} className="btn btn-ghost mt-4">
-          Close
-        </button>
       </div>
     </div>
   );

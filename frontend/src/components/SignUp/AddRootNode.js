@@ -40,7 +40,6 @@ function AddRootNode() {
         }
       }
       formData.append("file", file);
-      console.log("FFFFFFF", file);
       await addRootNode(formData);
       navigate("/family-tree");
     } catch (error) {
@@ -73,7 +72,6 @@ function AddRootNode() {
               name="birthDate"
               value={data.birthDate}
               onChange={handleChange}
-              required
               className="input input-bordered w-full"
             />
           </label>

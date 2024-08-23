@@ -8,7 +8,7 @@ export const createRootNode = async (req, res) => {
   console.log("body", req.body);
   const { userId, name, birthDate, deathDate, profession, description } =
     req.body;
-  console.log("rffghjk", req.file);
+
   let newFileName = req.file?.originalname
     ? `http://localhost:5000/uploads/${req.file.originalname}`
     : null;
@@ -21,17 +21,18 @@ export const createRootNode = async (req, res) => {
     CREATE (u)-[:HAS_ROOT]->(n)
     RETURN n
   `;
+  let parameters = {
+    userId: +userId,
+    name,
+    birthDate,
+    deathDate,
+    profession,
+    description,
+    newFileName,
+  };
 
   try {
-    await session.run(query, {
-      userId,
-      name,
-      birthDate,
-      deathDate,
-      profession,
-      description,
-      newFileName,
-    });
+    await session.run(query, parameters);
     res.status(201).send("Root node created successfully");
   } catch (error) {
     console.error("Error creating root node:", error);
@@ -247,7 +248,7 @@ export const getRootNode = async (req, res) => {
         WHERE id(u) = $userId
         RETURN root LIMIT 1
         `,
-      { userId } // Pass userId as a parameter to the query
+      { userId }
     );
 
     if (result.records.length > 0) {

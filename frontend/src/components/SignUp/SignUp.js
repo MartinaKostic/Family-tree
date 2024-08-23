@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { signUp } from "../../api/ApiCalls";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../helpers/AuthContext";
 
 function SignUp() {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ function SignUp() {
     password: "",
   });
   const [error, setError] = useState("");
+  const { setAuthStatus } = useContext(AuthContext);
   let navigate = useNavigate();
 
   // Fixed validation function
@@ -36,9 +38,10 @@ function SignUp() {
 
     try {
       const response = await signUp(formData);
-      localStorage.setItem("token", response.token); // Store the token
-      localStorage.setItem("userId", response.user.id);
-      navigate("/add-root-node"); // Redirect to root node page
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("userId", response.user.id.low);
+      setAuthStatus(true);
+      navigate("/add-root-node");
     } catch (err) {
       setError(err.error || "Failed to sign up");
     }

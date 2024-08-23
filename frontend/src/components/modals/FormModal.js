@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { addPerson } from "../../api/ApiCalls";
 
 const FormModal = ({ show, onClose, title, details, getNewData }) => {
@@ -27,7 +27,6 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
   };
 
   const handleSubmit = async (e) => {
-    const userId = localStorage.getItem("userId");
     e.preventDefault();
 
     try {
@@ -35,7 +34,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
         ...newPerson,
         id: details.data.id,
         type: title,
-        userId: userId,
+        userId: localStorage.getItem("userId"),
       };
 
       let formData = new FormData();
@@ -49,9 +48,6 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
       formData.append("file", file);
 
       await addPerson(formData);
-
-      console.log("aaaaaaaaaaaaaaaaaaa");
-
       getNewData();
       onClose();
       setNewPerson({
@@ -66,6 +62,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
       console.log("ERROR", error);
     }
   };
+
   if (!show) return null;
 
   return (
@@ -74,61 +71,100 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
       onClick={onClose}
     >
       <div
-        className="bg-white p-5 rounded-lg relative"
+        className="bg-white p-5 rounded-lg relative overflow-y-auto max-h-80 scrollbar-rounded"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4">
           <h5 className="text-lg font-medium">Add {title}</h5>
         </div>
-        <div className="space-y-4">
-          <form onSubmit={handleSubmit} className="flex flex-col">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Name:
+            </label>
             <input
               type="text"
               name="firstname"
-              placeholder="first name"
+              placeholder="Name"
               onChange={handleChange}
               required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             />
-            <label>
-              Birth date:
-              <input
-                type="date"
-                name="birthdate"
-                onChange={handleChange}
-              />{" "}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Add a photo:
             </label>
-            <label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              name="pictures"
+              id="file"
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Birth date:
+            </label>
+            <input
+              type="date"
+              name="birthDate"
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
               Death date:
-              <input type="date" name="deathdate" onChange={handleChange} />
+            </label>
+            <input
+              type="date"
+              name="deathDate"
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Profession:
+            </label>
+            <input
+              type="text"
+              name="profession"
+              placeholder="Profession"
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Description:
             </label>
             <textarea
               name="description"
               onChange={handleChange}
               placeholder="Enter description here..."
               rows="4"
-              cols="50"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             />
-            <input
-              type="text"
-              name="profession"
-              placeholder="profession"
-              onChange={handleChange}
-            />
-            <input
-              type="file"
-              onChange={handleFileChange}
-              name="pictures"
-              id="file"
-            />
-
-            <div>
-              <button type="submit">Submit</button>
-              <button type="button" onClick={onClose}>
-                Close
-              </button>
-            </div>
-          </form>
-        </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-1 px-2 bg-green-400 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-opacity-75"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              className="py-1 px-2 bg-blue-400 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-75"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

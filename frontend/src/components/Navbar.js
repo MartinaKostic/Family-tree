@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import SignOut from "./SignOut/SignOut";
+import { AuthContext } from "../helpers/AuthContext";
 
 function Navbar() {
+  const { isAuthenticated } = useContext(AuthContext);
+
   return (
     <nav className="bg-gray-100 shadow-lg w-full">
       <div className="max-w-6xl mx-auto px-4">
@@ -14,16 +17,24 @@ function Navbar() {
             Family Tree App
           </Link>
           <div className="flex items-center space-x-4">
-            <Link
-              to="/family-tree"
-              className="text-gray-700 hover:text-gray-900"
-            >
-              My Family Tree
-            </Link>
-            <Link to="/about" className="text-gray-700 hover:text-gray-900">
-              About Us
-            </Link>
-            <SignOut></SignOut>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/family-tree"
+                  className="text-gray-700 hover:text-gray-900"
+                >
+                  My Family Tree
+                </Link>
+                <Link to="/about" className="text-gray-700 hover:text-gray-900">
+                  About Us
+                </Link>
+                <SignOut />
+              </>
+            ) : (
+              <Link to="/about" className="text-gray-700 hover:text-gray-900">
+                About Us
+              </Link>
+            )}
           </div>
         </div>
       </div>

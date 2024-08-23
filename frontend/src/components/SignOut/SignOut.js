@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../helpers/AuthContext";
 
 function SignOut() {
   let navigate = useNavigate();
+  const { setAuthStatus } = useContext(AuthContext);
 
   const handleSignOut = () => {
     // Clear user token and other relevant details from localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
-    // Navigate the user back to the homepage or sign-in page
+    setAuthStatus(false);
     navigate("/");
   };
 

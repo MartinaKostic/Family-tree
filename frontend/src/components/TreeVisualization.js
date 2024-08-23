@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { select } from "d3-selection";
 import { hierarchy, tree, linkHorizontal, zoom, pointer } from "d3";
 import { timeFormat } from "d3-time-format";
+import AlertModal from "./modals/AlertModal";
 
 const TreeVisualization = ({
   data,
@@ -11,7 +12,8 @@ const TreeVisualization = ({
   onAddParent,
 }) => {
   const svgRef = useRef();
-  const formatDate = timeFormat("%d.%m.%Y");
+  // const formatDate = timeFormat("%d.%m.%Y");
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     if (!data || !data.root) return;
@@ -268,20 +270,20 @@ const TreeVisualization = ({
         .attr("text-anchor", "middle")
         .text((d) => d.data.name);
 
-      nodes
-        .append("text")
-        .attr("x", 50) // Center text horizontally
-        .attr("y", 50) // Position for the dates
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px") // Smaller font size for dates
-        .text((d) =>
-          d.data.birthDate
-            ? formatDate(new Date(d.data.birthDate)) +
-              (d.data.deathDate
-                ? ` - ${formatDate(new Date(d.data.deathDate))}`
-                : "")
-            : ""
-        ); // Display dates
+      // nodes
+      //   .append("text")
+      //   .attr("x", 50) // Center text horizontally
+      //   .attr("y", 50) // Position for the dates
+      //   .attr("text-anchor", "middle")
+      //   .style("font-size", "14px") // Smaller font size for dates
+      //   .text((d) =>
+      //     d.data.birthDate
+      //       ? formatDate(new Date(d.data.birthDate)) +
+      //         (d.data.deathDate
+      //           ? ` - ${formatDate(new Date(d.data.deathDate))}`
+      //           : "")
+      //       : ""
+      //   ); // Display dates
 
       nodes.each(function (d) {
         const node = select(this);
@@ -325,6 +327,7 @@ const TreeVisualization = ({
           .on("mouseenter", function (e) {
             const nodeSelection = select(this); // This selects the current node
             const boundData = nodeSelection.datum(); // This gets the data bound to the node
+            console.log("AAAAAAAAAAAAAAAAA", boundData);
             const [x, y] = pointer(e, this);
             let action = "";
             let iconX = 0;
@@ -373,6 +376,17 @@ const TreeVisualization = ({
 
               if (action == "Add Spouse") {
                 actionGroup.on("click", function (e) {
+                  if (
+                    boundData.data.spouses &&
+                    boundData.data.spouses.length > 0
+                  ) {
+                    setAlertMessage(
+                      "This person already has a spouse. Please delete the existing spouse first."
+                    );
+
+                    AlertModal(alertMessage);
+                    return; // Prevent adding a new spouse
+                  }
                   e.stopPropagation();
                   onAddSpouse(d);
                 });

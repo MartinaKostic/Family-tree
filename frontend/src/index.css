@@ -15,3 +15,22 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+/* Custom Scrollbar Styles */
+.scrollbar-rounded::-webkit-scrollbar {
+  width: 12px; /* Adjust scrollbar width */
+}
+
+.scrollbar-rounded::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Track color */
+  border-radius: 10px; /* Track border radius */
+}
+
+.scrollbar-rounded::-webkit-scrollbar-thumb {
+  background-color: #888; /* Handle color */
+  border-radius: 10px; /* Handle border radius */
+  border: 3px solid #f1f1f1; /* Creates padding around the scrollbar */
+}
+
+.scrollbar-rounded::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Handle hover color */
+}
