@@ -10,6 +10,7 @@ const FamilyTree = () => {
   //za details modal
   const [activePerson, setActivePerson] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const familyName = localStorage.getItem("familyName");
 
   const openForm = (type, details) => {
     setModal({ show: true, type, details });
@@ -53,6 +54,7 @@ const FamilyTree = () => {
  */
   return (
     <div className="flex flex-col items-center p-5 bg-gray-100">
+      {familyName && <h1>{familyName} Family Tree</h1>}
       <TreeVisualization
         data={data}
         onAddSpouse={(details) => openForm("spouse", details)}

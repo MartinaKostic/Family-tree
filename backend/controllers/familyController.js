@@ -5,7 +5,7 @@ import fs from "fs";
 
 export const createRootNode = async (req, res) => {
   const session = getSession();
-  console.log("body", req.body);
+
   const { userId, name, birthDate, deathDate, profession, description } =
     req.body;
 
@@ -138,13 +138,10 @@ export const addPerson = async (req, res) => {
   }
   const result = await session.run(createPersonQuery, parameters);
   if (type === "parent") {
-    console.log(result);
-
     const currentRootId = +id;
     const newRootId = result.records[0].get("newRootId").low;
     const user = +userId;
     const parameters2 = { currentRootId, newRootId, user };
-    console.log("qsasd", parameters2);
     const updateRootQuery = `
       MATCH (u:User WHERE id(u) = $user)-[r:HAS_ROOT]->(currentRoot:Person WHERE id(currentRoot) = $currentRootId)
       DELETE r
@@ -156,7 +153,6 @@ export const addPerson = async (req, res) => {
       RETURN newRoot`;
 
     const kaka = await session.run(updateRootQuery, parameters2);
-    console.log(kaka);
   }
   const records = await fetchFamilyTree(session); // Fetch the updated family tree
   await session.close();
@@ -227,8 +223,6 @@ export const editPersonDetails = async (req, res) => {
     updateData = { ...updateData, imageUrl: imageUrl };
   }
 
-  console.log("updd ata", updateData);
-
   try {
     const updatedPerson = await updatePersonInDatabase(+personId, updateData);
     res.json(updatedPerson);
@@ -275,7 +269,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = 10;
 
 export const signUp = async (req, res) => {
-  const { name, username, email, password } = req.body;
+  const { name, username, email, password, familyName } = req.body;
   const session = getSession();
   try {
     // Hash password
@@ -286,11 +280,12 @@ export const signUp = async (req, res) => {
       username: username,
       email: email,
       hashedPassword: hashedPassword,
+      familyName: familyName,
     };
 
     const query = `
-      CREATE (u:User {name: $name, username: $username, password: $hashedPassword, email: $email})
-      RETURN u.username AS username, u.email AS email, id(u) AS userId`;
+      CREATE (u:User {name: $name, username: $username, password: $hashedPassword, email: $email, familyName: $familyName})
+      RETURN u.username AS username, u.email AS email, id(u) AS userId, u.familyName AS familyName`;
 
     const result = await session.run(query, info);
 
@@ -321,6 +316,7 @@ export const signUp = async (req, res) => {
         id: userId,
         username: usernameReturned,
         email: emailReturned,
+        familyName: familyName,
       },
     });
   } catch (error) {
@@ -333,7 +329,6 @@ export const signUp = async (req, res) => {
         res.status(409).send({ error: "User with that e-mail already exists" });
       }
     } else {
-      console.log(error);
       res.status(500).send({ error: "Failed to create user" });
     }
   } finally {

@@ -9,6 +9,7 @@ function SignUp() {
     username: "",
     email: "",
     password: "",
+    familyName: "",
   });
   const [error, setError] = useState("");
   const { setAuthStatus } = useContext(AuthContext);
@@ -40,6 +41,8 @@ function SignUp() {
       const response = await signUp(formData);
       localStorage.setItem("token", response.token);
       localStorage.setItem("userId", response.user.id.low);
+      localStorage.setItem("familyName", formData.familyName); // Store family name in local storage
+      setAuthStatus(true);
       setAuthStatus(true);
       navigate("/add-root-node");
     } catch (err) {
@@ -97,9 +100,20 @@ function SignUp() {
             className="input input-bordered w-full"
           />
         </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            name="familyName"
+            value={formData.familyName}
+            onChange={handleChange}
+            placeholder="Family Name"
+            required
+            className="input input-bordered w-full"
+          />
+        </div>
         <button
           type="submit"
-          className="btn btn-primary px-4 py-1 bg-blue-400 rounded hover:bg-blue-600 transition duration-200 ease-in-out text-white"
+          className="btn btn-primary px-4 py-1 bg-blue-400 rounded-lg hover:bg-blue-600 transition duration-200 ease-in-out text-white"
         >
           Sign Up
         </button>

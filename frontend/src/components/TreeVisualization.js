@@ -1,7 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { select } from "d3-selection";
 import { hierarchy, tree, linkHorizontal, zoom, pointer } from "d3";
-import { timeFormat } from "d3-time-format";
 import AlertModal from "./modals/AlertModal";
 
 const TreeVisualization = ({
@@ -12,8 +11,8 @@ const TreeVisualization = ({
   onAddParent,
 }) => {
   const svgRef = useRef();
+  const [alertInfo, setAlertInfo] = useState({ open: false, message: "" });
   // const formatDate = timeFormat("%d.%m.%Y");
-  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     if (!data || !data.root) return;
@@ -29,9 +28,19 @@ const TreeVisualization = ({
       svg.selectAll("*").remove();
 
       const g = svg.append("g").attr("transform", "translate(50,50)");
-      const treeLayout = tree().size([width - 100, height - 100]);
-      //hierarchy needed- So from nodes children array we take id and find the same node in the nodes (cause id is not enough)
+      const treeLayout = tree()
+        .nodeSize([120, 120])
+        .separation((a, b) => {
+          let siblingSpacing = 1; // Default spacing for siblings without spouses
+          if (a.parent === b.parent) {
+            if (b.data.spouses && b.data.spouses.length > 0) {
+              siblingSpacing = 2;
+            }
+          }
+          return siblingSpacing;
+        });
 
+      //hierarchy needed- So from nodes children array we take id and find the same node in the nodes (cause id is not enough)
       const root = hierarchy(data.root, (d) =>
         d.children.map((childId) =>
           data.nodes.find((node) => node.id === childId)
@@ -39,6 +48,7 @@ const TreeVisualization = ({
       );
 
       treeLayout(root);
+
       // Initialize zoom behavior
       const zoomEffect = zoom()
         .scaleExtent([0.5, 3]) // Limit zoom scale
@@ -85,7 +95,7 @@ const TreeVisualization = ({
         const targetNode = data.nodes.find((d) => d.id === link.target);
 
         if (sourceNode && targetNode) {
-          const offsetX = 150;
+          const offsetX = 120;
 
           // Draw the link
           g.append("path")
@@ -268,7 +278,11 @@ const TreeVisualization = ({
         .attr("dy", "1.3em")
         .attr("x", 50)
         .attr("text-anchor", "middle")
-        .text((d) => d.data.name);
+        .text((d) =>
+          d.data.name.length > 9
+            ? `${d.data.name.substring(0, 6)}...`
+            : d.data.name
+        );
 
       // nodes
       //   .append("text")
@@ -327,7 +341,7 @@ const TreeVisualization = ({
           .on("mouseenter", function (e) {
             const nodeSelection = select(this); // This selects the current node
             const boundData = nodeSelection.datum(); // This gets the data bound to the node
-            console.log("AAAAAAAAAAAAAAAAA", boundData);
+
             const [x, y] = pointer(e, this);
             let action = "";
             let iconX = 0;
@@ -376,16 +390,17 @@ const TreeVisualization = ({
 
               if (action == "Add Spouse") {
                 actionGroup.on("click", function (e) {
+                  e.stopPropagation();
                   if (
                     boundData.data.spouses &&
                     boundData.data.spouses.length > 0
                   ) {
-                    setAlertMessage(
-                      "This person already has a spouse. Please delete the existing spouse first."
-                    );
-
-                    AlertModal(alertMessage);
-                    return; // Prevent adding a new spouse
+                    setAlertInfo({
+                      open: true,
+                      message:
+                        "This person already has a spouse. Please delete the existing spouse first.",
+                    });
+                    return;
                   }
                   e.stopPropagation();
                   onAddSpouse(d);
@@ -410,6 +425,7 @@ const TreeVisualization = ({
             actionText.attr("visibility", "hidden");
           });
       });
+
       // Handle window resizing
       window.addEventListener("resize", updateDimensions);
       return () => window.removeEventListener("resize", updateDimensions);
@@ -417,7 +433,17 @@ const TreeVisualization = ({
     updateDimensions();
   }, [data, onAddSpouse, onAddChild, onAddParent]);
 
-  return <svg ref={svgRef} />;
+  return (
+    <>
+      <svg ref={svgRef}></svg>
+      {alertInfo.open && (
+        <AlertModal
+          message={alertInfo.message}
+          onClose={() => setAlertInfo({ open: false, message: "" })}
+        />
+      )}
+    </>
+  );
 };
 
 export default TreeVisualization;

@@ -63,7 +63,7 @@ function SignIn() {
 
         <button
           type="submit"
-          className="btn btn-primary px-4 py-1 bg-blue-400 rounded hover:bg-blue-600 transition duration-200 ease-in-out text-white"
+          className="btn btn-primary px-4 py-1 bg-blue-400 rounded-lg hover:bg-blue-600 transition duration-200 ease-in-out text-white"
         >
           Sign In
         </button>

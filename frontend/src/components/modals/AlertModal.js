@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 
-const AlertModal = ({ message }) => {
-  const [, setAlertOpen] = useState(false);
+const AlertModal = ({ message, onClose, onParentModalClose }) => {
+  const [alertOpen, setAlertOpen] = useState(true);
 
   const handleCloseModal = () => {
     setAlertOpen(false);
+    onClose(); // This will set the alertInfo in the parent component
+    if (onParentModalClose) {
+      onParentModalClose(); // Also close the parent modal if the function is provided
+    }
   };
 
+  if (!alertOpen) return null;
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
@@ -20,7 +25,7 @@ const AlertModal = ({ message }) => {
         <p className="my-4">{message}</p>
         <button
           onClick={handleCloseModal}
-          className="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
+          className="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-lg"
         >
           Close
         </button>

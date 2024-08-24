@@ -11,7 +11,7 @@ function Home() {
         <h1 className="text-4xl font-bold">Welcome to Our Family Tree App</h1>
         <button
           onClick={() => setIsSigningIn(!isSigningIn)}
-          className="px-6 py-2 bg-green-400 text-white rounded hover:bg-green-600 transition duration-200 ease-in-out"
+          className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-600 transition duration-200 ease-in-out"
         >
           {isSigningIn
             ? "Need an account? Sign Up"

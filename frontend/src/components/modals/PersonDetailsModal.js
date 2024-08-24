@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AlertModal from "./AlertModal";
 
 function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -9,6 +10,7 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
     profession: person.profession || "",
   });
   const [file, setFile] = useState(null);
+  const [alertInfo, setAlertInfo] = useState({ open: false, message: "" });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -26,27 +28,32 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
 
   const handleSubmit = async () => {
     let formData = new FormData();
-    console.log(data);
+
     for (const key in data) {
       if (data.hasOwnProperty(key)) {
         formData.append(key, data[key]);
       }
     }
     if (file) formData.append("imageUrl", file);
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(`${key}: ${value}`);
+    // }
     onSave(person.id, formData);
     setIsEditMode(false);
   };
   const handleDelete = async () => {
     try {
       await onDelete(person.id);
-      alert("Person deleted successfully");
-      onClose(); // Close modal after deletion
+      setAlertInfo({
+        open: true,
+        message: "Person deleted successfully.",
+      });
+      //  setTimeout(() => onClose(), 1500); // Delay the close to allow the alert to be read
     } catch (error) {
-      alert("Error deleting person");
-      console.error(error);
+      setAlertInfo({
+        open: true,
+        message: "Error deleting a person",
+      });
     }
   };
 
@@ -55,6 +62,14 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-6 rounded-md shadow-lg relative">
+        {/* Always render AlertModal outside of any conditional block */}
+        {alertInfo.open && (
+          <AlertModal
+            message={alertInfo.message}
+            onClose={() => setAlertInfo({ open: false, message: "" })}
+            onParentModalClose={onClose}
+          />
+        )}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{person.name}</h2>
 
@@ -90,7 +105,7 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
             <input
               type="file"
               onChange={handleFileChange}
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
 
             <label className="block text-sm font-medium text-gray-700">
