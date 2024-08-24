@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { select } from "d3-selection";
-import { hierarchy, tree, linkHorizontal, zoom, pointer } from "d3";
+import { hierarchy, tree, linkHorizontal, zoom, pointer, max } from "d3";
 import AlertModal from "./modals/AlertModal";
 
 const TreeVisualization = ({
@@ -27,7 +27,8 @@ const TreeVisualization = ({
 
       svg.selectAll("*").remove();
 
-      const g = svg.append("g").attr("transform", "translate(50,50)");
+      const g = svg.append("g");
+
       const treeLayout = tree()
         .nodeSize([120, 120])
         .separation((a, b) => {
@@ -48,6 +49,16 @@ const TreeVisualization = ({
       );
 
       treeLayout(root);
+
+      // Centering the root node manually
+      const rootX = width / 2;
+      const shiftX = rootX - root.x;
+      root.each((d) => {
+        d.x += shiftX;
+      });
+
+      // Set the group's transform to adjust for the new root position
+      g.attr("transform", `translate(-50, 50)`);
 
       // Initialize zoom behavior
       const zoomEffect = zoom()
