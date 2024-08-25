@@ -10,6 +10,7 @@ function SignOut() {
     // Clear user token and other relevant details from localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
+    localStorage.removeItem("familyName");
     setAuthStatus(false);
     navigate("/");
   };

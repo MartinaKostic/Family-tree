@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addRootNode } from "../../api/ApiCalls";
+import { useFirstSignup } from "../../helpers/FirstSignupContext";
 
 function AddRootNode() {
+  const { setIsNewRootAdded } = useFirstSignup();
   const [data, setData] = useState({
     name: "",
     birthDate: "",
@@ -35,6 +37,8 @@ function AddRootNode() {
 
     try {
       await addRootNode(formData);
+      setIsNewRootAdded(true); // Directly use the setter here
+
       navigate("/family-tree");
     } catch (error) {
       console.error("Failed to add root node:", error);

@@ -25,6 +25,7 @@ function SignIn() {
       const response = await signIn(formData);
       localStorage.setItem("token", response.token); // Store the token
       localStorage.setItem("userId", response.user.id.low);
+      localStorage.setItem("familyName", response.user.familyName); // Store family name in local storage
       setAuthStatus(true);
       navigate("/family-tree");
     } catch (err) {

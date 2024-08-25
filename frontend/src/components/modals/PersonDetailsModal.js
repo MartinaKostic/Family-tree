@@ -35,20 +35,26 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
       }
     }
     if (file) formData.append("imageUrl", file);
-    // for (let [key, value] of formData.entries()) {
-    //   console.log(`${key}: ${value}`);
-    // }
+
     onSave(person.id, formData);
     setIsEditMode(false);
   };
   const handleDelete = async () => {
     try {
+      console.log(person);
+      if (person.isRoot) {
+        setAlertInfo({
+          open: true,
+          message:
+            "Deleting the root of the tree is not allowed because it would remove the entire family tree.",
+        });
+        return;
+      }
       await onDelete(person.id);
       setAlertInfo({
         open: true,
         message: "Person deleted successfully.",
       });
-      //  setTimeout(() => onClose(), 1500); // Delay the close to allow the alert to be read
     } catch (error) {
       setAlertInfo({
         open: true,

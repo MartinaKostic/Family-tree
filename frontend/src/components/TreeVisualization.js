@@ -192,7 +192,11 @@ const TreeVisualization = ({
             .attr("x", 50)
             .attr("y", 20)
             .attr("text-anchor", "middle")
-            .text(targetNode.name);
+            .text(
+              targetNode.name.length > 9
+                ? `${targetNode.name.substring(0, 8)}...`
+                : targetNode.name
+            );
 
           if (targetNode.imageUrl) {
             // Append image
@@ -291,7 +295,7 @@ const TreeVisualization = ({
         .attr("text-anchor", "middle")
         .text((d) =>
           d.data.name.length > 9
-            ? `${d.data.name.substring(0, 6)}...`
+            ? `${d.data.name.substring(0, 8)}...`
             : d.data.name
         );
 

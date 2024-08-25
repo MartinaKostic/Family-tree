@@ -8,7 +8,7 @@ function Navbar() {
 
   return (
     <nav className="bg-gray-100 shadow-lg w-full">
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w mx-auto px-8">
         <div className="flex justify-between items-center py-4">
           <Link
             to="/"

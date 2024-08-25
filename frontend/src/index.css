@@ -9,12 +9,14 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+   background-color: rgb(243 244 246 / var(--tw-bg-opacity)) ;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
 /* Custom Scrollbar Styles */
 .scrollbar-rounded::-webkit-scrollbar {
   width: 12px; /* Adjust scrollbar width */

@@ -342,7 +342,7 @@ export const signIn = async (req, res) => {
 
   const query = `
     MATCH (u:User {username: $username})
-    RETURN u.password AS hashedPassword, id(u) AS userId, u.username AS username, u.email AS email`;
+    RETURN u.password AS hashedPassword, id(u) AS userId, u.username AS username, u.email AS email, u.familyName AS familyName`;
 
   try {
     const result = await session.run(query, { username });
@@ -379,6 +379,7 @@ export const signIn = async (req, res) => {
         id: userRecord.get("userId"),
         username: userRecord.get("username"),
         email: userRecord.get("email"),
+        familyName: userRecord.get("familyName"),
       },
     });
   } catch (error) {
