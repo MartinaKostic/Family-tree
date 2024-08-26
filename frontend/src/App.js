@@ -11,15 +11,17 @@ function App() {
   return (
     <AuthProvider>
       <FirstSignupProvider>
-        <Router>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/family-tree" element={<FamilyTree />} />
-            <Route path="/add-root-node" element={<AddRootNode />} />
-            <Route path="/about" element={<AboutUs />} />
-          </Routes>
-        </Router>
+        <div className="min-h-screen bg-gray-100">
+          <Router>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/family-tree" element={<FamilyTree />} />
+              <Route path="/add-root-node" element={<AddRootNode />} />
+              <Route path="/about" element={<AboutUs />} />
+            </Routes>
+          </Router>
+        </div>
       </FirstSignupProvider>
     </AuthProvider>
   );
