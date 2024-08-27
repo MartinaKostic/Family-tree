@@ -30,7 +30,7 @@ const TreeVisualization = ({
       const g = svg.append("g");
 
       const treeLayout = tree()
-        .nodeSize([120, 120])
+        .nodeSize([140, 200])
         .separation((a, b) => {
           let siblingSpacing = 1; // Default spacing for siblings without spouses
           if (a.parent === b.parent) {
@@ -97,57 +97,157 @@ const TreeVisualization = ({
         .attr("fill", "none")
         .attr("stroke", "#ccc")
         .attr("stroke-width", 2);
+      //multiple spouses
+      // Gather all spouses for each primary node to calculate positions before drawing
 
-      //adding the spouses
+      //
+
+      //     // Draw the link with correct coordinates
+      //     g.append("path")
+      //       .attr("class", "spouse-link")
+      //       .attr(
+      //         "d",
+      //         `M${sourceNode.x + 60},${sourceNode.y + 15} H${
+      //           sourceNode.x + offsetX + 5
+      //         } V${sourceNode.y + offsetY + 5}`
+      //       )
+      //       .attr("stroke", "#ccc")
+      //       .attr("stroke-width", 2)
+      //       .attr("fill", "none");
+
+      //     // Group for spouse node
+      //     const spouseNodeGroup = g
+      //       .append("g")
+      //       .attr(
+      //         "transform",
+      //         `translate(${sourceNode.x + offsetX},${sourceNode.y + offsetY})`
+      //       )
+      //       .on("click", () => onPersonClick(targetNode))
+      //       .on("mouseover", function () {
+      //         select(this)
+      //           .select("rect")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 120)
+      //           .attr("height", 36)
+      //           .attr("x", -10)
+      //           .attr("y", -3);
+      //         select(this)
+      //           .select("image")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 60)
+      //           .attr("height", 60)
+      //           .attr("x", 20)
+      //           .attr("y", -65);
+      //       })
+      //       .on("mouseout", function () {
+      //         select(this)
+      //           .select("rect")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 100)
+      //           .attr("height", 30)
+      //           .attr("x", 0)
+      //           .attr("y", 0);
+      //         select(this)
+      //           .select("image")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 50)
+      //           .attr("height", 50)
+      //           .attr("x", 25)
+      //           .attr("y", -50);
+      //       });
+
+      //     // Append details to the spouse node group
+      //     spouseNodeGroup
+      //       .append("rect")
+      //       .attr("width", 100)
+      //       .attr("height", 30)
+      //       .attr("rx", 10)
+      //       .attr("ry", 10)
+      //       .attr("fill", "#b2f2bb");
+      //     spouseNodeGroup
+      //       .append("text")
+      //       .attr("x", 50)
+      //       .attr("y", 20)
+      //       .attr("text-anchor", "middle")
+      //       .text(
+      //         targetNode.name.length > 9
+      //           ? `${targetNode.name.substring(0, 8)}...`
+      //           : targetNode.name
+      //       );
+      //     if (targetNode.imageUrl) {
+      //       spouseNodeGroup
+      //         .append("image")
+      //         .attr("xlink:href", targetNode.imageUrl)
+      //         .attr("width", 50)
+      //         .attr("height", 50)
+      //         .attr("x", 25)
+      //         .attr("y", -50);
+      //     }
+      //   });
+      // });
+
+      const spouseMap = new Map();
       data.spouseLinks.forEach((link) => {
+        if (!spouseMap.has(link.source)) {
+          spouseMap.set(link.source, []);
+        }
+        spouseMap.get(link.source).push(link);
+      });
+
+      // Now iterate over each primary node's spouses
+      spouseMap.forEach((links, sourceId) => {
         const sourceNode = root
           .descendants()
-          .find((d) => d.data.id === link.source);
-        const targetNode = data.nodes.find((d) => d.id === link.target);
+          .find((d) => d.data.id === sourceId);
+        if (!sourceNode) return; // Ensure sourceNode is found
 
-        if (sourceNode && targetNode) {
-          const offsetX = 120;
+        links.forEach((link, index) => {
+          const targetNode = data.nodes.find((d) => d.id === link.target);
+          if (!targetNode) return; // Ensure targetNode is found
 
-          // Draw the link
+          const offsetX = 150; // Horizontal offset for spouse placement
+          const singleSpouse = links.length === 1;
+          const offsetY = singleSpouse
+            ? 0
+            : index * 50 - (links.length - 1) * 25; // Adjust Y position for each spouse
+
+          // Conditional path drawing based on the number of spouses
+          const pathD = singleSpouse
+            ? `M${sourceNode.x},${sourceNode.y + 15} H${sourceNode.x + offsetX}`
+            : `M${sourceNode.x},${sourceNode.y + 15} H${
+                sourceNode.x + offsetX - 30
+              } V${sourceNode.y + offsetY + 15} H${sourceNode.x + offsetX}`;
+
           g.append("path")
             .attr("class", "spouse-link")
-            .attr(
-              "d",
-              linkHorizontal()
-                .x((d) => d.y + 60)
-                .y((d) => d.x + 15)({
-                source: { x: sourceNode.y, y: sourceNode.x },
-                target: { x: sourceNode.y, y: sourceNode.x + offsetX },
-              })
-            )
+            .attr("d", pathD)
             .attr("stroke", "#ccc")
             .attr("stroke-width", 2)
             .attr("fill", "none");
+
           // Group for spouse node
           const spouseNodeGroup = g
             .append("g")
             .attr(
               "transform",
-              `translate(${sourceNode.x + offsetX},${sourceNode.y})`
-            ) //za modal details
-            .on("click", () => {
-              onPersonClick(targetNode);
-            })
+              `translate(${sourceNode.x + offsetX},${sourceNode.y + offsetY})`
+            )
+            .on("click", () => onPersonClick(targetNode))
             .on("mouseover", function () {
-              // Handle hover to expand both rectangle and image
               select(this)
                 .select("rect")
-                .style("cursor", "pointer")
                 .transition()
                 .duration(100)
                 .attr("width", 120)
                 .attr("height", 36)
                 .attr("x", -10)
                 .attr("y", -3);
-
               select(this)
                 .select("image")
-                .style("cursor", "pointer")
                 .transition()
                 .duration(100)
                 .attr("width", 60)
@@ -156,7 +256,6 @@ const TreeVisualization = ({
                 .attr("y", -65);
             })
             .on("mouseout", function () {
-              // Handle hover out to shrink both rectangle and image
               select(this)
                 .select("rect")
                 .transition()
@@ -165,7 +264,6 @@ const TreeVisualization = ({
                 .attr("height", 30)
                 .attr("x", 0)
                 .attr("y", 0);
-
               select(this)
                 .select("image")
                 .transition()
@@ -176,7 +274,7 @@ const TreeVisualization = ({
                 .attr("y", -50);
             });
 
-          // Append rectangle
+          // Append details to the spouse node group
           spouseNodeGroup
             .append("rect")
             .attr("width", 100)
@@ -184,11 +282,8 @@ const TreeVisualization = ({
             .attr("rx", 10)
             .attr("ry", 10)
             .attr("fill", "#b2f2bb");
-
-          // Append text
           spouseNodeGroup
             .append("text")
-            .style("cursor", "pointer")
             .attr("x", 50)
             .attr("y", 20)
             .attr("text-anchor", "middle")
@@ -197,9 +292,7 @@ const TreeVisualization = ({
                 ? `${targetNode.name.substring(0, 8)}...`
                 : targetNode.name
             );
-
           if (targetNode.imageUrl) {
-            // Append image
             spouseNodeGroup
               .append("image")
               .attr("xlink:href", targetNode.imageUrl)
@@ -208,8 +301,122 @@ const TreeVisualization = ({
               .attr("x", 25)
               .attr("y", -50);
           }
-        }
+        });
       });
+
+      //adding the spouses
+      // data.spouseLinks.forEach((link) => {
+      //   const sourceNode = root
+      //     .descendants()
+      //     .find((d) => d.data.id === link.source);
+      //   const targetNode = data.nodes.find((d) => d.id === link.target);
+
+      //   if (sourceNode && targetNode) {
+      //     const offsetX = 140;
+
+      //     // Draw the link
+      //     g.append("path")
+      //       .attr("class", "spouse-link")
+      //       .attr(
+      //         "d",
+      //         linkHorizontal()
+      //           .x((d) => d.y + 60)
+      //           .y((d) => d.x + 15)({
+      //           source: { x: sourceNode.y, y: sourceNode.x },
+      //           target: { x: sourceNode.y, y: sourceNode.x + offsetX },
+      //         })
+      //       )
+      //       .attr("stroke", "#ccc")
+      //       .attr("stroke-width", 2)
+      //       .attr("fill", "none");
+
+      //     // Group for spouse node
+      //     const spouseNodeGroup = g
+      //       .append("g")
+      //       .attr(
+      //         "transform",
+      //         `translate(${sourceNode.x + offsetX},${sourceNode.y})`
+      //       ) //za modal details
+      //       .on("click", () => {
+      //         onPersonClick(targetNode);
+      //       })
+      //       .on("mouseover", function () {
+      //         // Handle hover to expand both rectangle and image
+      //         select(this)
+      //           .select("rect")
+      //           .style("cursor", "pointer")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 120)
+      //           .attr("height", 36)
+      //           .attr("x", -10)
+      //           .attr("y", -3);
+
+      //         select(this)
+      //           .select("image")
+      //           .style("cursor", "pointer")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 60)
+      //           .attr("height", 60)
+      //           .attr("x", 20)
+      //           .attr("y", -65);
+      //       })
+      //       .on("mouseout", function () {
+      //         // Handle hover out to shrink both rectangle and image
+      //         select(this)
+      //           .select("rect")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 100)
+      //           .attr("height", 30)
+      //           .attr("x", 0)
+      //           .attr("y", 0);
+
+      //         select(this)
+      //           .select("image")
+      //           .transition()
+      //           .duration(100)
+      //           .attr("width", 50)
+      //           .attr("height", 50)
+      //           .attr("x", 25)
+      //           .attr("y", -50);
+      //       });
+
+      //     // Append rectangle
+      //     spouseNodeGroup
+      //       .append("rect")
+      //       .attr("width", 100)
+      //       .attr("height", 30)
+      //       .attr("rx", 10)
+      //       .attr("ry", 10)
+      //       .attr("fill", "#b2f2bb");
+
+      //     // Append text
+      //     spouseNodeGroup
+      //       .append("text")
+      //       .style("cursor", "pointer")
+      //       .attr("x", 50)
+      //       .attr("y", 20)
+      //       .attr("text-anchor", "middle")
+      //       .text(
+      //         targetNode.name.length > 9
+      //           ? `${targetNode.name.substring(0, 8)}...`
+      //           : targetNode.name
+      //       );
+
+      //     if (targetNode.imageUrl) {
+      //       // Append image
+      //       spouseNodeGroup
+      //         .append("image")
+      //         .attr("xlink:href", targetNode.imageUrl)
+      //         .attr("width", 50)
+      //         .attr("height", 50)
+      //         .attr("x", 25)
+      //         .attr("y", -50);
+      //     }
+      //   }
+      // });
 
       const nodes = g
         .selectAll(".node")
@@ -406,17 +613,18 @@ const TreeVisualization = ({
               if (action == "Add Spouse") {
                 actionGroup.on("click", function (e) {
                   e.stopPropagation();
-                  if (
-                    boundData.data.spouses &&
-                    boundData.data.spouses.length > 0
-                  ) {
-                    setAlertInfo({
-                      open: true,
-                      message:
-                        "This person already has a spouse. Please delete the existing spouse first.",
-                    });
-                    return;
-                  }
+                  //ako zelim ne dopustit da se doda spouse ako vec postoji:
+                  // if (
+                  //   boundData.data.spouses &&
+                  //   boundData.data.spouses.length > 0
+                  // ) {
+                  //   setAlertInfo({
+                  //     open: true,
+                  //     message:
+                  //       "This person already has a spouse. Please delete the existing spouse first.",
+                  //   });
+                  //   return;
+                  // }
                   e.stopPropagation();
                   onAddSpouse(d);
                 });
