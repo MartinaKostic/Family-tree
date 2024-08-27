@@ -77,7 +77,7 @@ const TreeVisualization = ({
         .attr("d", (d) => {
           const sourceX = d.source.x + 50; // Centers the line to the middle of the node
           const sourceY = d.source.y;
-          const targetX = d.target.x + 50; // Centers the line to the middle of the node
+          const targetX = d.target.x + 50;
           const targetY = d.target.y;
           return `M${sourceX},${sourceY}
                   V${(sourceY + targetY) / 2}
@@ -97,99 +97,10 @@ const TreeVisualization = ({
         .attr("fill", "none")
         .attr("stroke", "#ccc")
         .attr("stroke-width", 2);
+
       //multiple spouses
       // Gather all spouses for each primary node to calculate positions before drawing
-
-      //
-
-      //     // Draw the link with correct coordinates
-      //     g.append("path")
-      //       .attr("class", "spouse-link")
-      //       .attr(
-      //         "d",
-      //         `M${sourceNode.x + 60},${sourceNode.y + 15} H${
-      //           sourceNode.x + offsetX + 5
-      //         } V${sourceNode.y + offsetY + 5}`
-      //       )
-      //       .attr("stroke", "#ccc")
-      //       .attr("stroke-width", 2)
-      //       .attr("fill", "none");
-
-      //     // Group for spouse node
-      //     const spouseNodeGroup = g
-      //       .append("g")
-      //       .attr(
-      //         "transform",
-      //         `translate(${sourceNode.x + offsetX},${sourceNode.y + offsetY})`
-      //       )
-      //       .on("click", () => onPersonClick(targetNode))
-      //       .on("mouseover", function () {
-      //         select(this)
-      //           .select("rect")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 120)
-      //           .attr("height", 36)
-      //           .attr("x", -10)
-      //           .attr("y", -3);
-      //         select(this)
-      //           .select("image")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 60)
-      //           .attr("height", 60)
-      //           .attr("x", 20)
-      //           .attr("y", -65);
-      //       })
-      //       .on("mouseout", function () {
-      //         select(this)
-      //           .select("rect")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 100)
-      //           .attr("height", 30)
-      //           .attr("x", 0)
-      //           .attr("y", 0);
-      //         select(this)
-      //           .select("image")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 50)
-      //           .attr("height", 50)
-      //           .attr("x", 25)
-      //           .attr("y", -50);
-      //       });
-
-      //     // Append details to the spouse node group
-      //     spouseNodeGroup
-      //       .append("rect")
-      //       .attr("width", 100)
-      //       .attr("height", 30)
-      //       .attr("rx", 10)
-      //       .attr("ry", 10)
-      //       .attr("fill", "#b2f2bb");
-      //     spouseNodeGroup
-      //       .append("text")
-      //       .attr("x", 50)
-      //       .attr("y", 20)
-      //       .attr("text-anchor", "middle")
-      //       .text(
-      //         targetNode.name.length > 9
-      //           ? `${targetNode.name.substring(0, 8)}...`
-      //           : targetNode.name
-      //       );
-      //     if (targetNode.imageUrl) {
-      //       spouseNodeGroup
-      //         .append("image")
-      //         .attr("xlink:href", targetNode.imageUrl)
-      //         .attr("width", 50)
-      //         .attr("height", 50)
-      //         .attr("x", 25)
-      //         .attr("y", -50);
-      //     }
-      //   });
-      // });
-
+      // basically list of relationships for each node
       const spouseMap = new Map();
       data.spouseLinks.forEach((link) => {
         if (!spouseMap.has(link.source)) {
@@ -199,12 +110,17 @@ const TreeVisualization = ({
       });
 
       // Now iterate over each primary node's spouses
+      //When you use .forEach() on a Map in JavaScript, the first parameter represents the value
+      // and the second parameter represents the key in each key-value pair of the Map.
       spouseMap.forEach((links, sourceId) => {
+        //source ce bit znaci osoba te obitelji koja ima muzeve/zene
+        //sourceID je zprv key je zprv od te osobe id
         const sourceNode = root
           .descendants()
           .find((d) => d.data.id === sourceId);
         if (!sourceNode) return; // Ensure sourceNode is found
 
+        //iterating through relationships of that source:)
         links.forEach((link, index) => {
           const targetNode = data.nodes.find((d) => d.id === link.target);
           if (!targetNode) return; // Ensure targetNode is found
@@ -240,20 +156,34 @@ const TreeVisualization = ({
             .on("mouseover", function () {
               select(this)
                 .select("rect")
+                .style("cursor", "pointer")
                 .transition()
                 .duration(100)
                 .attr("width", 120)
                 .attr("height", 36)
                 .attr("x", -10)
                 .attr("y", -3);
-              select(this)
-                .select("image")
-                .transition()
-                .duration(100)
-                .attr("width", 60)
-                .attr("height", 60)
-                .attr("x", 20)
-                .attr("y", -65);
+              // Handling image for single spouse always present
+              if (singleSpouse && targetNode.imageUrl) {
+                select(this)
+                  .select("image")
+                  .style("cursor", "pointer")
+                  .transition()
+                  .duration(100)
+                  .attr("width", 60)
+                  .attr("height", 60)
+                  .attr("x", 20)
+                  .attr("y", -65);
+              } else if (!singleSpouse && targetNode.imageUrl) {
+                // Append the image only on hover if multiple spouses
+                spouseNodeGroup
+                  .append("image")
+                  .attr("xlink:href", targetNode.imageUrl)
+                  .attr("width", 60)
+                  .attr("height", 60)
+                  .attr("x", 20)
+                  .attr("y", -65);
+              }
             })
             .on("mouseout", function () {
               select(this)
@@ -264,14 +194,18 @@ const TreeVisualization = ({
                 .attr("height", 30)
                 .attr("x", 0)
                 .attr("y", 0);
-              select(this)
-                .select("image")
-                .transition()
-                .duration(100)
-                .attr("width", 50)
-                .attr("height", 50)
-                .attr("x", 25)
-                .attr("y", -50);
+              if (singleSpouse) {
+                select(this)
+                  .select("image")
+                  .transition()
+                  .duration(100)
+                  .attr("width", 50)
+                  .attr("height", 50)
+                  .attr("x", 25)
+                  .attr("y", -50);
+              } else {
+                select(this).select("image").remove(); // Remove the image on mouseout for multiple spouses
+              }
             });
 
           // Append details to the spouse node group
@@ -284,6 +218,7 @@ const TreeVisualization = ({
             .attr("fill", "#b2f2bb");
           spouseNodeGroup
             .append("text")
+            .style("cursor", "pointer")
             .attr("x", 50)
             .attr("y", 20)
             .attr("text-anchor", "middle")
@@ -292,7 +227,7 @@ const TreeVisualization = ({
                 ? `${targetNode.name.substring(0, 8)}...`
                 : targetNode.name
             );
-          if (targetNode.imageUrl) {
+          if (singleSpouse && targetNode.imageUrl) {
             spouseNodeGroup
               .append("image")
               .attr("xlink:href", targetNode.imageUrl)
@@ -303,120 +238,6 @@ const TreeVisualization = ({
           }
         });
       });
-
-      //adding the spouses
-      // data.spouseLinks.forEach((link) => {
-      //   const sourceNode = root
-      //     .descendants()
-      //     .find((d) => d.data.id === link.source);
-      //   const targetNode = data.nodes.find((d) => d.id === link.target);
-
-      //   if (sourceNode && targetNode) {
-      //     const offsetX = 140;
-
-      //     // Draw the link
-      //     g.append("path")
-      //       .attr("class", "spouse-link")
-      //       .attr(
-      //         "d",
-      //         linkHorizontal()
-      //           .x((d) => d.y + 60)
-      //           .y((d) => d.x + 15)({
-      //           source: { x: sourceNode.y, y: sourceNode.x },
-      //           target: { x: sourceNode.y, y: sourceNode.x + offsetX },
-      //         })
-      //       )
-      //       .attr("stroke", "#ccc")
-      //       .attr("stroke-width", 2)
-      //       .attr("fill", "none");
-
-      //     // Group for spouse node
-      //     const spouseNodeGroup = g
-      //       .append("g")
-      //       .attr(
-      //         "transform",
-      //         `translate(${sourceNode.x + offsetX},${sourceNode.y})`
-      //       ) //za modal details
-      //       .on("click", () => {
-      //         onPersonClick(targetNode);
-      //       })
-      //       .on("mouseover", function () {
-      //         // Handle hover to expand both rectangle and image
-      //         select(this)
-      //           .select("rect")
-      //           .style("cursor", "pointer")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 120)
-      //           .attr("height", 36)
-      //           .attr("x", -10)
-      //           .attr("y", -3);
-
-      //         select(this)
-      //           .select("image")
-      //           .style("cursor", "pointer")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 60)
-      //           .attr("height", 60)
-      //           .attr("x", 20)
-      //           .attr("y", -65);
-      //       })
-      //       .on("mouseout", function () {
-      //         // Handle hover out to shrink both rectangle and image
-      //         select(this)
-      //           .select("rect")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 100)
-      //           .attr("height", 30)
-      //           .attr("x", 0)
-      //           .attr("y", 0);
-
-      //         select(this)
-      //           .select("image")
-      //           .transition()
-      //           .duration(100)
-      //           .attr("width", 50)
-      //           .attr("height", 50)
-      //           .attr("x", 25)
-      //           .attr("y", -50);
-      //       });
-
-      //     // Append rectangle
-      //     spouseNodeGroup
-      //       .append("rect")
-      //       .attr("width", 100)
-      //       .attr("height", 30)
-      //       .attr("rx", 10)
-      //       .attr("ry", 10)
-      //       .attr("fill", "#b2f2bb");
-
-      //     // Append text
-      //     spouseNodeGroup
-      //       .append("text")
-      //       .style("cursor", "pointer")
-      //       .attr("x", 50)
-      //       .attr("y", 20)
-      //       .attr("text-anchor", "middle")
-      //       .text(
-      //         targetNode.name.length > 9
-      //           ? `${targetNode.name.substring(0, 8)}...`
-      //           : targetNode.name
-      //       );
-
-      //     if (targetNode.imageUrl) {
-      //       // Append image
-      //       spouseNodeGroup
-      //         .append("image")
-      //         .attr("xlink:href", targetNode.imageUrl)
-      //         .attr("width", 50)
-      //         .attr("height", 50)
-      //         .attr("x", 25)
-      //         .attr("y", -50);
-      //     }
-      //   }
-      // });
 
       const nodes = g
         .selectAll(".node")
@@ -506,26 +327,10 @@ const TreeVisualization = ({
             : d.data.name
         );
 
-      // nodes
-      //   .append("text")
-      //   .attr("x", 50) // Center text horizontally
-      //   .attr("y", 50) // Position for the dates
-      //   .attr("text-anchor", "middle")
-      //   .style("font-size", "14px") // Smaller font size for dates
-      //   .text((d) =>
-      //     d.data.birthDate
-      //       ? formatDate(new Date(d.data.birthDate)) +
-      //         (d.data.deathDate
-      //           ? ` - ${formatDate(new Date(d.data.deathDate))}`
-      //           : "")
-      //       : ""
-      //   ); // Display dates
-
       nodes.each(function (d) {
         const node = select(this);
-        const nodeWidth = 100; // Assuming a standard width for simplicity
-        const nodeHeight = 30; // Assuming a standard height for simplicity
-
+        const nodeWidth = 100;
+        const nodeHeight = 30;
         // Append a group to each node which will contain the icon and text
         const actionGroup = node
           .append("g")
