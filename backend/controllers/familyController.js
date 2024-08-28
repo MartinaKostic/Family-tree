@@ -85,6 +85,7 @@ export const getFamilyTree = async (_req, res) => {
 };
 
 export const addPerson = async (req, res) => {
+  //SPREMI IPAK IMEEEEEEEEEEEE U BAZUUUUUUUUUUUUUUUUUUUUU
   const session = getSession();
   const {
     firstname,
@@ -95,6 +96,7 @@ export const addPerson = async (req, res) => {
     description,
     type,
     userId,
+    otherParentId,
   } = req.body;
 
   let newFileName = req.file?.originalname
@@ -102,9 +104,11 @@ export const addPerson = async (req, res) => {
     : null;
 
   let createPersonQuery = `
-    CREATE (c:Person {name: $firstname, birthDate: $birthdate, deathDate: $deathdate, description: $description, profession: $profession, isRoot: false, imageUrl: $newFileName})
+    CREATE (c:Person {name: $firstname, birthDate: $birthdate, deathDate: $deathdate, description: $description, profession: $profession, isRoot: false, imageUrl: $newFileName, parentId: $id, otherParentId: $otherParentId})
     WITH c
   `;
+
+  const parentId = type === "child" ? +id : null;
 
   let parameters = {
     firstname,
@@ -114,6 +118,8 @@ export const addPerson = async (req, res) => {
     description,
     profession,
     newFileName,
+    parentId: parentId,
+    otherParentId: +otherParentId || null,
   };
 
   if (type === "spouse") {
@@ -137,6 +143,7 @@ export const addPerson = async (req, res) => {
     `;
   }
   const result = await session.run(createPersonQuery, parameters);
+
   if (type === "parent") {
     const currentRootId = +id;
     const newRootId = result.records[0].get("newRootId").low;
@@ -152,7 +159,7 @@ export const addPerson = async (req, res) => {
       SET newRoot.isRoot = true
       RETURN newRoot`;
 
-    const kaka = await session.run(updateRootQuery, parameters2);
+    await session.run(updateRootQuery, parameters2);
   }
   const records = await fetchFamilyTree(session); // Fetch the updated family tree
   await session.close();

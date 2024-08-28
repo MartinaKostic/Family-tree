@@ -16,7 +16,27 @@ const FamilyTree = () => {
   const { isNewRootAdded, setIsNewRootAdded } = useFirstSignup();
 
   const openForm = (type, details) => {
-    setModal({ show: true, type, details });
+    let modalData = { ...details };
+
+    if (type === "child" && details) {
+      // Simulate fetching spouse details for the given parent
+      //nadi roditelj node (koji ima details id)
+      const parentNode = details.data;
+      // //spremi njegove spouse ids
+      const spouseIds = parentNode ? parentNode.spouses : [];
+
+      // Fetch spouse details
+      const spouseDetails = spouseIds
+        .map((spouseId) => data.nodes.find((node) => node.id === spouseId))
+        .filter((spouse) => spouse !== undefined); // Ensure all found spouses are valid
+      //ako je tip child onda ce details jos imat i spouses u sebix
+      modalData = {
+        ...details,
+        spouses: spouseDetails,
+      };
+    }
+
+    setModal({ show: true, type, details: modalData });
   };
 
   const fetchData = async () => {
@@ -86,7 +106,7 @@ const FamilyTree = () => {
         show={modal.show}
         title={modal.type}
         onClose={() => setModal({ show: false, type: null })}
-        details={modal.details}
+        details={modal.details} // This now includes parentData when type is 'child'
         getNewData={fetchData}
       />
     </div>

@@ -8,6 +8,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     deathdate: "",
     description: "",
     profession: "",
+    otherParentId: "", // To store the selected spouse's ID
   });
   const [file, setFile] = useState(null);
 
@@ -16,6 +17,13 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     setNewPerson((prevState) => ({
       ...prevState,
       [name]: value,
+    }));
+  };
+  const handleSpouseChange = (e) => {
+    console.log(e.target.value);
+    setNewPerson((prevState) => ({
+      ...prevState,
+      otherParentId: e.target.value, // Store the selected spouse's ID
     }));
   };
 
@@ -28,8 +36,8 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
+      //id je od nodea kojemu dodajemo spouse ili child!
       const data = {
         ...newPerson,
         id: details.data.id,
@@ -56,6 +64,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
         deathdate: "",
         description: "",
         profession: "",
+        otherParentId: "",
       });
       setFile(null);
     } catch (error) {
@@ -74,10 +83,35 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
         className="bg-white p-5 rounded-lg relative overflow-y-auto max-h-80 scrollbar-rounded"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* title je spouse child ili parent ovisno sta se dodaje */}
         <div className="mb-4">
           <h5 className="text-lg font-medium">Add {title}</h5>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {title === "child" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Parents:
+              </label>
+              <p className="mt-1">{details.data.name}</p>
+              {details.spouses?.length > 1 ? (
+                <select
+                  name="otherParentId"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  onChange={handleSpouseChange}
+                >
+                  <option value="">Select other parent</option>
+                  {details.spouses.map((spouse, index) => (
+                    <option key={index} value={spouse.id}>
+                      {spouse.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                details.spouses.length === 1 && <p>{details.spouses[0].name}</p>
+              )}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Name:
