@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AlertModal from "./AlertModal";
+import { fetchPossibleParents } from "../../api/ApiCalls";
 
 function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -8,9 +9,28 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
     deathDate: person.deathDate || "",
     description: person.description || "",
     profession: person.profession || "",
+    otherParentName: person.otherParentName || "",
   });
   const [file, setFile] = useState(null);
   const [alertInfo, setAlertInfo] = useState({ open: false, message: "" });
+  const [possibleOtherParents, setPossibleOtherParents] = useState([]);
+
+  useEffect(() => {
+    // Pre-select otherParentName if only one spouse exists
+    if (!isEditMode && person.otherParentName) {
+      setData((prevData) => ({
+        ...prevData,
+        otherParentName: person.otherParentName,
+      }));
+    }
+    if (isEditMode && person.parentId) {
+      // Fetch possible parents (spouses) only when in edit mode and parentId is available
+      fetchPossibleParents(person.parentId).then((spouses) => {
+        setPossibleOtherParents(spouses);
+      });
+      console.log(possibleOtherParents);
+    }
+  }, [isEditMode, person.otherParentName]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -19,6 +39,14 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
       [name]: value,
     }));
   };
+
+  const handleSpouseChange = (e) => {
+    setData((prevState) => ({
+      ...prevState,
+      otherParentName: e.target.value, // Update the selected spouse's name
+    }));
+  };
+
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       let selected = e.target.files[0];
@@ -41,7 +69,6 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
   };
   const handleDelete = async () => {
     try {
-      console.log(person);
       if (person.isRoot) {
         setAlertInfo({
           open: true,
@@ -103,8 +130,42 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
             </div>
           )}
         </div>
+        {/* Display parent names */}
+        {!isEditMode && (
+          <>
+            {person.parentName && person.otherParentName ? (
+              <p>
+                Parents: {person.parentName} and {person.otherParentName}
+              </p>
+            ) : (
+              person.parentName && <p>Parent: {person.parentName}</p>
+            )}
+          </>
+        )}
         {isEditMode ? (
           <>
+            {possibleOtherParents.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Choose the other parent:
+                </label>
+                <select
+                  name="otherParentName"
+                  value={data.otherParentName}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  onChange={handleSpouseChange}
+                >
+                  <option value={person.otherParentName}>
+                    {person.otherParentName}
+                  </option>
+                  {possibleOtherParents.map((spouse) => (
+                    <option key={spouse.id} value={spouse.name}>
+                      {spouse.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <label className="block text-sm font-medium text-gray-700">
               Add a photo:
             </label>

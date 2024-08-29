@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { select } from "d3-selection";
-import { hierarchy, tree, linkHorizontal, zoom, pointer, max } from "d3";
+import { hierarchy, tree, zoom, pointer } from "d3";
 import AlertModal from "./modals/AlertModal";
 
 const TreeVisualization = ({

@@ -8,6 +8,7 @@ import {
   signIn,
   getRootNode,
   createRootNode,
+  getPossibleParents,
 } from "../controllers/familyController.js";
 import multer from "multer";
 
@@ -36,5 +37,6 @@ router.put(
 );
 router.post("/signup", signUp);
 router.post("/signin", signIn);
+router.get("/possible-parents/:personId", getPossibleParents);
 
 export default router;

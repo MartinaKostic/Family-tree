@@ -8,7 +8,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     deathdate: "",
     description: "",
     profession: "",
-    otherParentId: "", // To store the selected spouse's ID
+    otherParentName: "",
   });
   const [file, setFile] = useState(null);
 
@@ -23,7 +23,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     console.log(e.target.value);
     setNewPerson((prevState) => ({
       ...prevState,
-      otherParentId: e.target.value, // Store the selected spouse's ID
+      otherParentName: e.target.value, // Store the selected spouse's names
     }));
   };
 
@@ -37,12 +37,19 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const parent2 =
+        details.spouses.length === 1
+          ? details.spouses[0].name
+          : newPerson.otherParentName;
       //id je od nodea kojemu dodajemo spouse ili child!
       const data = {
         ...newPerson,
         id: details.data.id,
         type: title,
         userId: localStorage.getItem("userId"),
+        parentName: details.data.name,
+        parentId: details.data.id,
+        otherParentName: parent2,
       };
 
       let formData = new FormData();
@@ -64,7 +71,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
         deathdate: "",
         description: "",
         profession: "",
-        otherParentId: "",
+        otherParentName: "",
       });
       setFile(null);
     } catch (error) {
@@ -102,7 +109,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
                 >
                   <option value="">Select other parent</option>
                   {details.spouses.map((spouse, index) => (
-                    <option key={index} value={spouse.id}>
+                    <option key={index} value={spouse.name}>
                       {spouse.name}
                     </option>
                   ))}

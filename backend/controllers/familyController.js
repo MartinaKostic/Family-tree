@@ -1,7 +1,6 @@
 import { getSession } from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import fs from "fs";
 
 export const createRootNode = async (req, res) => {
   const session = getSession();
@@ -85,7 +84,6 @@ export const getFamilyTree = async (_req, res) => {
 };
 
 export const addPerson = async (req, res) => {
-  //SPREMI IPAK IMEEEEEEEEEEEE U BAZUUUUUUUUUUUUUUUUUUUUU
   const session = getSession();
   const {
     firstname,
@@ -96,7 +94,9 @@ export const addPerson = async (req, res) => {
     description,
     type,
     userId,
-    otherParentId,
+    parentName,
+    parentId,
+    otherParentName,
   } = req.body;
 
   let newFileName = req.file?.originalname
@@ -104,11 +104,11 @@ export const addPerson = async (req, res) => {
     : null;
 
   let createPersonQuery = `
-    CREATE (c:Person {name: $firstname, birthDate: $birthdate, deathDate: $deathdate, description: $description, profession: $profession, isRoot: false, imageUrl: $newFileName, parentId: $id, otherParentId: $otherParentId})
+    CREATE (c:Person {name: $firstname, birthDate: $birthdate, deathDate: $deathdate, description: $description, profession: $profession, isRoot: false, imageUrl: $newFileName, parentName: $parentName, parentId:$parentId, otherParentName: $otherParentName})
     WITH c
   `;
 
-  const parentId = type === "child" ? +id : null;
+  const parent1 = type === "child" ? parentName : null;
 
   let parameters = {
     firstname,
@@ -118,8 +118,9 @@ export const addPerson = async (req, res) => {
     description,
     profession,
     newFileName,
-    parentId: parentId,
-    otherParentId: +otherParentId || null,
+    parentName: parent1,
+    parentId: parentId || null,
+    otherParentName: otherParentName || null,
   };
 
   if (type === "spouse") {
@@ -384,6 +385,35 @@ export const signIn = async (req, res) => {
   } catch (error) {
     console.error("Sign-in error:", error);
     res.status(500).json({ error: "Failed to sign in: " + error.message });
+  } finally {
+    await session.close();
+  }
+};
+export const getPossibleParents = async (req, res) => {
+  const parentId = req.params.personId;
+  const session = getSession();
+
+  try {
+    console.log("Fetching possible parents for parentId:", parentId); // Debugg
+    const query = `
+      MATCH (p:Person)-[:SPOUSE_OF]-(s:Person)
+      WHERE id(p) = $parentId
+      RETURN s
+    `;
+
+    const result = await session.run(query, { parentId: +parentId });
+    const spouses = result.records.map((record) => {
+      const spouseNode = record.get("s");
+      return {
+        id: spouseNode.identity.low,
+        name: spouseNode.properties.name,
+      };
+    });
+
+    res.status(200).json(spouses);
+  } catch (error) {
+    console.error("Failed to fetch possible parents:", error);
+    res.status(500).json({ error: "Failed to fetch possible parents." });
   } finally {
     await session.close();
   }

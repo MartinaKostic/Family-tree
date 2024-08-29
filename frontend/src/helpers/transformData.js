@@ -6,16 +6,14 @@ export const transformData = (records, rootNode) => {
     const { person, children, spouses } = record;
     if (!person || person.id === undefined || person.id === null) {
       console.error("Invalid person data", record);
-      return; // Skip malformed records
+      return;
     }
-
     // Every person has children and spouses arrays
     let nodeData = nodes.get(person.id) || {
       ...person,
       children: [],
       spouses: [],
     };
-
     // Setup children
     children.forEach((child) => {
       if (child && child.id !== undefined && child.id !== null) {
@@ -31,7 +29,6 @@ export const transformData = (records, rootNode) => {
         nodeData.children.push(child.id); // Store child id
       }
     });
-
     // Setup spouses
     spouses.forEach((spouse) => {
       if (spouse && spouse.id !== undefined && spouse.id !== null) {

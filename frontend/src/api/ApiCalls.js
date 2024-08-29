@@ -87,3 +87,12 @@ export const addRootNode = async (rootNodeDetails) => {
     throw error; // Re-throw to handle it in the calling component for user feedback
   }
 };
+
+export const fetchPossibleParents = async (parentId) => {
+  try {
+    const response = await axiosInstance.get(`/possible-parents/${parentId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : new Error("Network Error");
+  }
+};
