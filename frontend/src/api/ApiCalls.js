@@ -22,7 +22,6 @@ export const fetchFamilyTree = async () => {
 };
 
 export const addPerson = async (data) => {
-  console.log("adding person");
   const response = await axiosInstance.post("/add-person", data);
   return response;
 };

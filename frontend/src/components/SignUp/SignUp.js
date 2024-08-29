@@ -34,15 +34,13 @@ function SignUp() {
       setError(
         "Password must be at least 8 characters long and include a number"
       );
-      return; // Exit the function to prevent further execution
+      return;
     }
-
     try {
       const response = await signUp(formData);
       localStorage.setItem("token", response.token);
       localStorage.setItem("userId", response.user.id.low);
-      localStorage.setItem("familyName", formData.familyName); // Store family name in local storage
-      setAuthStatus(true);
+      localStorage.setItem("familyName", formData.familyName);
       setAuthStatus(true);
       navigate("/add-root-node");
     } catch (err) {

@@ -346,29 +346,22 @@ export const signUp = async (req, res) => {
 export const signIn = async (req, res) => {
   const { username, password } = req.body;
   const session = getSession();
-
   const query = `
     MATCH (u:User {username: $username})
     RETURN u.password AS hashedPassword, id(u) AS userId, u.username AS username, u.email AS email, u.familyName AS familyName`;
-
   try {
     const result = await session.run(query, { username });
-
     if (result.records.length === 0) {
       res.status(404).json({ message: "Invalid credentials" });
       return;
     }
-
     const userRecord = result.records[0];
     const hashedPassword = userRecord.get("hashedPassword");
-
     const passwordIsValid = await bcrypt.compare(password, hashedPassword);
     if (!passwordIsValid) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
     }
-
-    // Generate a JWT
     const token = jwt.sign(
       {
         userId: userRecord.get("userId"),
@@ -376,9 +369,8 @@ export const signIn = async (req, res) => {
         email: userRecord.get("email"),
       },
       JWT_SECRET,
-      { expiresIn: "1h" } // Token expires in 1 hour
+      { expiresIn: "1h" }
     );
-
     res.status(200).json({
       message: "Successfully signed in",
       token,
