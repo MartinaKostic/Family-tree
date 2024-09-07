@@ -12,7 +12,6 @@ const TreeVisualization = ({
 }) => {
   const svgRef = useRef();
   const [alertInfo, setAlertInfo] = useState({ open: false, message: "" });
-  // const formatDate = timeFormat("%d.%m.%Y");
 
   useEffect(() => {
     if (!data || !data.root) return;
@@ -32,7 +31,7 @@ const TreeVisualization = ({
       const treeLayout = tree()
         .nodeSize([140, 200])
         .separation((a, b) => {
-          let siblingSpacing = 1; // Default spacing for siblings without spouses
+          let siblingSpacing = 1; // Zadana udaljenost za bracu/sestre bez supružnika
           if (a.parent === b.parent) {
             if (b.data.spouses && b.data.spouses.length > 0) {
               siblingSpacing = 2;
@@ -41,7 +40,7 @@ const TreeVisualization = ({
           return siblingSpacing;
         });
 
-      //hierarchy needed- So from nodes children array we take id and find the same node in the nodes (cause id is not enough)
+      //potrebna hijerarhija - Dakle, iz niza čvorova djece uzimamo id i nalazimo isti čvor u čvorovima (jer id nije dovoljan)
       const root = hierarchy(data.root, (d) =>
         d.children.map((childId) =>
           data.nodes.find((node) => node.id === childId)

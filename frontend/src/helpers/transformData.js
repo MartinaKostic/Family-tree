@@ -8,13 +8,12 @@ export const transformData = (records, rootNode) => {
       console.error("Invalid person data", record);
       return;
     }
-    // Every person has children and spouses arrays
+    // Svaka osoba ima niz spouses i children
     let nodeData = nodes.get(person.id) || {
       ...person,
       children: [],
       spouses: [],
     };
-    // Setup children
     children.forEach((child) => {
       if (child && child.id !== undefined && child.id !== null) {
         nodes.set(
@@ -26,10 +25,9 @@ export const transformData = (records, rootNode) => {
             id: child.id,
           }
         );
-        nodeData.children.push(child.id); // Store child id
+        nodeData.children.push(child.id); // spremi child id
       }
     });
-    // Setup spouses
     spouses.forEach((spouse) => {
       if (spouse && spouse.id !== undefined && spouse.id !== null) {
         nodes.set(
@@ -41,11 +39,10 @@ export const transformData = (records, rootNode) => {
             id: spouse.id,
           }
         );
-        nodeData.spouses.push(spouse.id); // Store spouse id
+        nodeData.spouses.push(spouse.id); // spremi spouse id
         spouseLinks.push({ source: person.id, target: spouse.id });
       }
     });
-
     nodes.set(person.id, nodeData);
   });
 

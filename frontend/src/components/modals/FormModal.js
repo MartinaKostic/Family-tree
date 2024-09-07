@@ -38,7 +38,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
     e.preventDefault();
     try {
       const parent2 =
-        details.spouses.length === 1
+        details.spouses?.length === 1
           ? details.spouses[0].name
           : newPerson.otherParentName;
       //id je od nodea kojemu dodajemo spouse ili child!

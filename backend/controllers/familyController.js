@@ -280,7 +280,7 @@ export const signUp = async (req, res) => {
   const { name, username, email, password, familyName } = req.body;
   const session = getSession();
   try {
-    // Hash password
+    // Hashiranje lozinke
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const info = {
@@ -306,7 +306,7 @@ export const signUp = async (req, res) => {
     const usernameReturned = userRecord.get("username");
     const emailReturned = userRecord.get("email");
 
-    // Generate a JWT
+    // Generiranje JWT
     const token = jwt.sign(
       {
         userId: userId,
@@ -314,7 +314,7 @@ export const signUp = async (req, res) => {
         email: emailReturned,
       },
       JWT_SECRET,
-      { expiresIn: "1h" } // Token expires in 1 hour
+      { expiresIn: "1h" }
     );
 
     res.status(201).json({
