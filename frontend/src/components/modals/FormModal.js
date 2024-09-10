@@ -146,7 +146,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Birth date:
+              Birthdate:
             </label>
             <input
               type="date"
@@ -157,7 +157,7 @@ const FormModal = ({ show, onClose, title, details, getNewData }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Death date:
+              Deathdate:
             </label>
             <input
               type="date"

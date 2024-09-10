@@ -34,7 +34,7 @@ const TreeVisualization = ({
           let siblingSpacing = 1; // Zadana udaljenost za bracu/sestre bez supružnika
           if (a.parent === b.parent) {
             if (b.data.spouses && b.data.spouses.length > 0) {
-              siblingSpacing = 2;
+              siblingSpacing = 2.5;
             }
           }
           return siblingSpacing;
@@ -223,7 +223,7 @@ const TreeVisualization = ({
             .attr("text-anchor", "middle")
             .text(
               targetNode.name.length > 9
-                ? `${targetNode.name.substring(0, 8)}...`
+                ? `${targetNode.name.substring(0, 9)}...`
                 : targetNode.name
             );
           if (singleSpouse && targetNode.imageUrl) {
@@ -322,7 +322,7 @@ const TreeVisualization = ({
         .attr("text-anchor", "middle")
         .text((d) =>
           d.data.name.length > 9
-            ? `${d.data.name.substring(0, 8)}...`
+            ? `${d.data.name.substring(0, 9)}...`
             : d.data.name
         );
 

@@ -176,7 +176,7 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
             />
 
             <label className="block text-sm font-medium text-gray-700">
-              Birth date:
+              Birthdate:
               <input
                 type="date"
                 name="birthDate"
@@ -186,7 +186,7 @@ function PersonDetailsModal({ person, onClose, onSave, onDelete }) {
               />
             </label>
             <label className="block text-sm font-medium text-gray-700">
-              Death date:
+              Deathdate:
               <input
                 type="date"
                 name="deathDate"
